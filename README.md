@@ -63,7 +63,9 @@ Input (B, T, 256, 256, 1)
   Class Logits (0–3)
 ```
 
-> *[Figure 1: SNN Block Diagram — see attached Picture1]*
+<div align="center">
+<img width="2000" height="564" alt="Picture1" src="https://github.com/user-attachments/assets/9d2d1e2a-42d9-4687-b119-73937a786371" />
+</div>
 
 Each of the three convolutional blocks follows the same pattern:
 
@@ -97,19 +99,19 @@ The design targets the **Xilinx Virtex UltraScale+ XCVU11P** in the `flga2577-3-
 
 ### Device Resources
 
-| Resource | XCVU11P (VU11P) |
-|----------|----------------|
-| DSP48E2 Slices | **4,638** |
-| Block RAM Tiles (36 Kb each) | **2,016** |
-| Block RAM Total Capacity | **70.9 Mb** |
-| UltraRAM Blocks (288 Kb each) | **640** |
-| UltraRAM Total Capacity | **180 Mb** |
-| CLB LUTs | **2,586,240** |
-| CLB Registers (Flip-Flops) | **5,172,480** |
-| Package | flga2577 (2,577-pin FCBGA) |
-| Speed Grade | −3 (fastest commercial) |
+| Resource Type | XCVU11P (VU11P) |
+| :--- | :--- |
+| **System Logic Cells** | 2,835,000 |
+| **CLB Flip-Flops** | 2,592,000 |
+| **CLB LUTs** | 1,296,000 |
+| **Max. Distributed RAM (Mb)** | 36.2 |
+| **Block RAM Blocks** | 2,016 |
+| **Block RAM (Mb)** | 70.9 |
+| **UltraRAM Blocks** | 960 |
+| **UltraRAM (Mb)** | 270.0 |
+| **DSP Slices** | 9,216 |
 
-### Why This Device
+### DSP48E2 slice
 
 The DSP48E2 slice is the central resource in this design. The accelerator maps virtually all multiply-accumulate and addition operations onto DSP48E2 primitives using their native capabilities:
 
@@ -117,7 +119,9 @@ The DSP48E2 slice is the central resource in this design. The accelerator maps v
 - **Pre-adder port (D):** Allows a third input to be added before the multiplier, enabling a true 3-input adder in a single DSP and single pipeline stage.
 - **Cascade bus:** DSP slices can chain their outputs directly to adjacent slices without routing fabric, forming efficient **cascaded MAC chains** for convolution accumulation.
 
-The 4,638 DSP48E2 slices provide sufficient headroom for Stage 1 (the most demanding stage), which consumes 4,000 DSPs — 98.1% of the available budget.
+<div align="center">
+    <img width="689" height="443" alt="image" src="https://github.com/user-attachments/assets/b76843a0-f010-40c9-b490-559f95578cb0" />
+</div>
 
 ### Operating Target
 
@@ -192,7 +196,9 @@ The full 256×256 input frame is zero-padded to **260×260** (2 pixels on each s
 | 1 | CONV1 (5×5, no pad) | 20×20×32 | **24×24×1** |
 | — | Padded input crop | — | 24×24 from 260×260 |
 
-> *[Figure 2: Backtracking Diagram — see attached Backtracking image]*
+<div align="center">
+<img width="511" height="362" alt="Backtracking" src="https://github.com/user-attachments/assets/6da5f8c4-45ac-4046-8464-998e2c8c85dc" />
+</div>
 
 **Key result:** A single **24×24 crop** from the padded 260×260 input, processed through all three stages, produces exactly **one LIF3 output pixel** (across 128 channels). To fill the complete 4×4×128 LIF3 output map, 16 such crops are processed sequentially across 6 memory frames.
 
@@ -212,7 +218,6 @@ Stage 1 performs a 5×5 convolution over a single input channel (grayscale) to p
 | Input channels | 1 |
 | Output filters | 32 |
 | Stride | 1 |
-| Padding | None (zero-padding applied to full frame before crop) |
 | Conv output (per crop) | 20×20×32 |
 | After MaxPool 2×2 | 10×10×32 |
 | LIF1 output | 10×10×32 spikes |
@@ -267,7 +272,9 @@ The three chains run **in parallel**. The final addition of the three partial su
 
 This reduces the naive 49-DSP implementation to **27 DSPs per CONV25 unit** (3 × 9 = 27), while achieving the same result.
 
-> *[Figure 3: CONV25 Internal Architecture — see attached image_1777809144761]*
+<div align="center">
+ <img width="1191" height="671" alt="image" src="https://github.com/user-attachments/assets/2594e342-6901-4c5e-a79c-4f5537ff692e" />
+</div>
 
 The same 9-DSP cascaded chain (conv9) is directly reused in Stages 2 and 3, making CONV25 a natural extension of the shared conv9 primitive rather than a separate design.
 
@@ -313,8 +320,9 @@ The LIF neuron produces two outputs:
 - **MEM_OUT** — the updated membrane potential, written back to the same memory address as the input.
 - **~Sign_Bit** — the spike output (inverted sign bit used as a 1-bit spike indicator), written to the spike memory at the same spatial position.
 
-> *[Figure 4: Shaaban Unit Circuit Diagram — see attached shaban_unit image]*
-
+<div align="center">
+ <img width="387" height="342" alt="shaban_unit" src="https://github.com/user-attachments/assets/e92b6e46-6bdf-4292-8cf3-795642d02cf5" />
+</div>
 ---
 
 ### 4.3 Stage 1 Hardware: Combining CONV25 and Shaaban Units
@@ -322,6 +330,10 @@ The LIF neuron produces two outputs:
 #### One Filter, One Shaaban Unit
 
 A single Shaaban unit produces **1 LIF1 output element** per cycle from 1 filter. It is driven by 4 CONV25 units, each processing one 5×5 image window from the 2×2 neighbourhood.
+
+<div align="center">
+ <img width="1191" height="671" alt="image" src="https://github.com/user-attachments/assets/2594e342-6901-4c5e-a79c-4f5537ff692e" />
+</div>
 
 #### 32 Filters in Parallel
 
