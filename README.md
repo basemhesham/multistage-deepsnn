@@ -261,72 +261,15 @@ The forward pass repeats for each of the **T=16 temporal frames**. Membrane pote
 
 ### LIF Neuron Hardware Formulation
 
-```
-  PREVIOUS CYCLE                    CURRENT CYCLE
-  ─────────────                     ─────────────
-  mem_reg ──► ( >>> 1 ) ──────────► mem_leak      [β = 0.5: arithmetic right-shift]
-                                         │
-  in_pool ──────────────────────────────►(+)──────► mem_input
-                                                         │
-  spike_reg ──► ( × threshold ) ────────────────────────►(−)──► new_mem
-                                                                     │
-                                              (new_mem ≥ threshold) ?─► spike = 1
-                                                                     └─► spike = 0
-                                                                              │
-                                                                         ┌────▼─────┐
-                                                                         │ Register │──► spike_reg (next cycle)
-                                                                         └──────────┘
-```
+The LIF neuron is optimized for FPGA using **arithmetic right-shifts** for decay and a **delayed reset** mechanism:
+- **Decay:** $\beta = 0.5$ (implemented as `mem >>> 1`).
+- **Threshold:** 5.0 (fixed-point).
+- **Delayed Reset:** The spike from the *previous* cycle triggers the threshold subtraction in the *current* cycle.
 
-The reset is "delayed by one cycle" — `spike_reg` (previous cycle's output) subtracts the threshold from the current integration, preventing immediate re-firing.
 
----
+## 4. Hardware Pipeline & Resource Sharing
 
-## 4. Fixed-Point Quantization
-
-All weights, activations, and intermediate results use **18-bit signed fixed-point** representation.
-
-### Number Format
-
-```
-  Bit 17          Bit 10  Bit 9              Bit 0
-  ┌───┬──────────────────┬──────────────────────┐
-  │ S │  Integer (7 b)   │  Fraction (10 b)     │
-  └───┴──────────────────┴──────────────────────┘
-    │                                    │
-  Sign bit                      Scale = 2¹⁰ = 1024
-
-  Range:  −128.000  to  +127.999 (step ≈ 0.000977)
-  Format: Q7.10  (signed, 8 integer bits including sign, 10 fractional bits)
-```
-
-### DSP48E2 Arithmetic Mapping
-
-```
-  OPERATION          HARDWARE IMPLEMENTATION            DSP SLICES USED
-  ─────────────────  ─────────────────────────────────  ───────────────
-  18-bit × 18-bit    2 × DSP48E2 (product too wide       2 DSPs
-  multiply           for a single slice)
-
-  3-input add        1 × DSP48E2 using pre-adder port    1 DSP
-  (A + D + C)        D + A (pre-adder) → feed into C     (replaces 2 separate adds)
-```
-
-Using 3-input DSP adders instead of 2-input binary trees yields **~50% fewer adder DSPs** in the channel accumulation stage.
-
-| Parameter | Value |
-|-----------|-------|
-| Total bits | 18 |
-| Integer bits | 8 (including sign) |
-| Fractional bits | 10 |
-| Scale factor | 2¹⁰ = 1024 |
-| Range | −128.000 to +127.999 |
-
----
-
-## 5. Three-Stage Hardware Pipeline
-
-The three SNN blocks map to distinct hardware configurations. The same physical resources (conv9 units, Shaaban units, adder trees) are time-multiplexed across stages via the `src_sel` MUX controller.
+To minimize silicon footprint, the design time-multiplexes a single pool of hardware resources across the three SNN stages using a 3-way MUX controller (`src_sel`).
 
 ### Hardware Sharing Overview
 
