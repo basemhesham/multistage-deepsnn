@@ -44,29 +44,8 @@
 
 Each inference processes **16 temporal frames** of a **256×256** grayscale input image. The design uses a **backtracking-derived sliding-window** approach that determines the minimum input crop needed to produce one output, then tiles those crops across the image. Three deeply pipelined SNN stages are followed by Global Average Pooling and two fully-connected layers.
 
-### System-Level Data Flow
+<img width="2000" height="564" alt="Picture1" src="https://github.com/user-attachments/assets/e44b9bfa-52ca-4652-b5e1-7cd2d10cfb49" />
 
-```mermaid
-flowchart LR
-    A["256×256\nInput Image\n(16 frames)"]
-    B["Memory\nController\n6 Frames"]
-    C["Stage 1\n5×5 Conv → BN\n→ Pool → LIF1\n128 conv25 units"]
-    D["Stage 2\n3×3 Conv → BN\n→ Pool → LIF2\n384 conv9 units"]
-    E["Stage 3\n3×3 Conv → BN\n→ Pool → LIF3\n256 conv9 units"]
-    F["GAP\n4×4×128\n→ 128"]
-    G["FC1\n128→256\nReLU"]
-    H["FC2\n256→4"]
-    I["Class\n0-3"]
-
-    A --> B --> C -->|"LIF1 spikes\n10×10×32"| D -->|"LIF2 spikes\n4×4×64"| E -->|"LIF3 spikes\n1×1×128\n(×16 crops)"| F --> G --> H --> I
-
-    style C fill:#ffcccc,stroke:#cc0000
-    style D fill:#ffe0cc,stroke:#cc6600
-    style E fill:#fff0cc,stroke:#cc9900
-    style F fill:#ccffcc,stroke:#006600
-    style G fill:#ccffcc,stroke:#006600
-    style H fill:#ccffcc,stroke:#006600
-```
 
 The key hardware goals are:
 
@@ -82,26 +61,10 @@ The core design philosophy is **backtracking**: instead of designing forward fro
 
 ### Reverse Derivation
 
-Working backwards through all layers (no zero-padding is used in any convolution):
+Working backwards through all layers:
 
-```
-        DESIRED OUTPUT                        REQUIRED INPUT
-        ──────────────                        ──────────────
+<img width="511" height="362" alt="Backtracking" src="https://github.com/user-attachments/assets/6036f4ff-6f37-40f1-8379-540b66311ff5" />
 
-   LIF3:  1×1 ──── MaxPool3 (×2) ──────────► 2×2  before pooling
-          2×2 ──── CONV3 3×3 (+2 each side) ► 4×4  = 2+3−1
-                                               │
-   LIF2:  4×4 ──── MaxPool2 (×2) ──────────► 8×8  before pooling
-          8×8 ──── CONV2 3×3 (+2 each side) ► 10×10 = 8+3−1
-                                               │
-   LIF1: 10×10 ─── MaxPool1 (×2) ──────────► 20×20 before pooling
-         20×20 ─── CONV1 5×5 (+4 each side) ► 24×24 = 20+5−1
-                                               │
-                                        ┌──────▼──────┐
-                                        │   24×24     │
-                                        │  INPUT CROP │
-                                        └─────────────┘
-```
 
 **Result:** A single **24×24 crop** from the input image, when passed through the full three-stage SNN pipeline, produces exactly **one LIF3 output pixel** (across 128 channels).
 
