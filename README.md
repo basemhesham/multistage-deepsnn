@@ -142,6 +142,10 @@ Standard neural network inference processes the entire input image through each 
 
 The **backtracking approach** solves this by working from the desired output backwards through every layer to determine the smallest input window that produces exactly one output element at the final stage. The hardware then tiles this minimum window across the image, enabling all three stages to work simultaneously in a streaming fashion.
 
+<div align="center">
+<img width="511" height="362" alt="Backtracking" src="https://github.com/user-attachments/assets/6da5f8c4-45ac-4046-8464-998e2c8c85dc" />
+</div>
+
 ### Stage 3: Final Output Dependency
 
 To produce **1 LIF output element** from Stage 3:
@@ -195,10 +199,6 @@ The full 256×256 input frame is zero-padded to **260×260** (2 pixels on each s
 | 1 | LIF1 / MaxPool1 (2×2) | **10×10×32** | 20×20×32 |
 | 1 | CONV1 (5×5, no pad) | 20×20×32 | **24×24×1** |
 | — | Padded input crop | — | 24×24 from 260×260 |
-
-<div align="center">
-<img width="511" height="362" alt="Backtracking" src="https://github.com/user-attachments/assets/6da5f8c4-45ac-4046-8464-998e2c8c85dc" />
-</div>
 
 **Key result:** A single **24×24 crop** from the padded 260×260 input, processed through all three stages, produces exactly **one LIF3 output pixel** (across 128 channels). To fill the complete 4×4×128 LIF3 output map, 16 such crops are processed sequentially across 6 memory frames.
 
