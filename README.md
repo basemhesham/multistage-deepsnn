@@ -331,10 +331,6 @@ The LIF neuron produces two outputs:
 
 A single Shaaban unit produces **1 LIF1 output element** per cycle from 1 filter. It is driven by 4 CONV25 units, each processing one 5×5 image window from the 2×2 neighbourhood.
 
-<div align="center">
- <img width="1191" height="671" alt="image" src="https://github.com/user-attachments/assets/2594e342-6901-4c5e-a79c-4f5537ff692e" />
-</div>
-
 #### 32 Filters in Parallel
 
 Stage 1 has 32 output filters. To process all 32 filters simultaneously, **32 Shaaban units** are instantiated (one per filter). Each Shaaban unit is driven by its own dedicated set of 4 CONV25 units, giving:
