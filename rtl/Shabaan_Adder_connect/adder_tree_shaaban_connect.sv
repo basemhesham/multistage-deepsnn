@@ -36,55 +36,39 @@
 //   Shaaban s ← flat_s1[s*4 .. s*4+3]
 // =============================================================================
 
+`timescale 1ns / 1ps
+
 module adder_tree_shaaban_connect #(
-    // ── Adder tree ────────────────────────────────────────────────────────────
     parameter int N_TREES        = 12,
     parameter int TAPS_PER_TREE  = 10,
-
-    // ── Shaaban unit ─────────────────────────────────────────────────────────
     parameter int N_SHAABAN      = 32,
     parameter int INPUTS_PER_SHB = 4,
-    parameter int POOL_NUM       = 2,   // = INPUTS_PER_SHB / 2
-
-    // ── Common ────────────────────────────────────────────────────────────────
     parameter int DATA_WIDTH     = 18,
 
-    // ── Derived — do NOT override ─────────────────────────────────────────────
-    parameter int TOTAL_S1_INPUTS = N_SHAABAN * INPUTS_PER_SHB,      // 128
-    parameter int TOTAL_TAPS      = N_TREES * TAPS_PER_TREE,         // 120
-    parameter int N_CORRECTION    = TOTAL_S1_INPUTS - TOTAL_TAPS,    // 8
-    parameter int S2_ACTIVE       = 3,   // Shaaban units active in Stage 2
-    parameter int S3_ACTIVE       = 1    // Shaaban units active in Stage 3
+    // Derived parameters
+    parameter int TOTAL_S1_INPUTS  = N_SHAABAN * INPUTS_PER_SHB,       // 128
+    parameter int TOTAL_TAPS       = N_TREES * TAPS_PER_TREE,          // 120
+    parameter int N_CORRECTION     = TOTAL_S1_INPUTS - TOTAL_TAPS      // 8
 )(
     input  logic        clk,
     input  logic        rst,
-    input  logic [1:0]  src_sel,   // Stage selector — see table above
+    input  logic [1:0]  src_sel,   // 00=Stage1  01=Stage2  10=Stage3
 
-    // 12 trees × 32 MAC products  [tree_index][product_index]
+    // 12 trees × 32 MAC products from Convolution Array
     input  logic signed [N_TREES-1:0][31:0][DATA_WIDTH-1:0] mac_in,
 
-    // Stage 3 pre-accumulated 64-channel sum (reduced outside this module)
-    input  logic signed [DATA_WIDTH-1:0] final_s3,
-
-    // Shared Shaaban weights
-    input  logic signed [DATA_WIDTH-1:0] conv_bias,
-    input  logic signed [DATA_WIDTH-1:0] mult_weight,
-    input  logic signed [DATA_WIDTH-1:0] add_weight,
-
-    output logic [N_SHAABAN-1:0] spike_out
+    // Output bus to the 32 Shaaban Units (each carries 4 inputs)
+    output logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] shb_conv_bus [0:N_SHAABAN-1]
 );
 
     // =========================================================================
-    // SECTION 1 — 12 Adder tree instances
+    // 1. ADDER TREE & CORRECTION LOGIC
     // =========================================================================
-    // tree_tap[t][k] = conv25_{k+1} of tree t → complete conv25 result
-    // tree_final[t]  = sum of all 32 inputs of tree t → used in Stage 2/3
-    // =========================================================================
-
     logic signed [DATA_WIDTH-1:0] tree_tap   [0:N_TREES-1][0:TAPS_PER_TREE-1];
     logic signed [DATA_WIDTH-1:0] tree_final [0:N_TREES-1];
+    logic signed [DATA_WIDTH-1:0] s3_results [0:5];
 
-    genvar t;
+    genvar t, i;
     generate
         for (t = 0; t < N_TREES; t++) begin : gen_trees
             adder_tree_10_4_1_1 u_tree (
@@ -109,111 +93,101 @@ module adder_tree_shaaban_connect #(
                 .final_output(tree_final[t])
             );
         end
+        
+        // Stage 3 Pairwise Summation
+        for (i = 0; i < 6; i++) begin : gen_s3_sums
+            assign s3_results[i] = tree_final[2*i] + tree_final[2*i+1];
+        end
+    endgenerate
+    // =========================================================================
+    // 2. SEPARATE INPUT LOGIC: EXTERNAL SUM CORRECTION
+    // -------------------------------------------------------------------------
+    // Consumes the 24 "extra" MAC products (indices 30 and 31 from 12 trees) 
+    // in a continuous flat sequence to feed 8 adders (3 inputs each).
+    // For any correction 'c', its 3 inputs have global pool indices: 3c, 3c+1, 3c+2.
+    // Tree Index = (global_index) / 2
+    // Port Index = 30 + ((global_index) % 2)
+    // =========================================================================
+    logic signed [19:0]           ext_sum_raw [0:N_CORRECTION-1]; 
+    logic signed [DATA_WIDTH-1:0] ext_sum_correction [0:N_CORRECTION-1]; 
+
+    genvar c;
+    generate
+        for (c = 0; c < N_CORRECTION; c++) begin : gen_ext_correction
+            adder_layer1 u_correction_adder (
+                .add_1    (mac_in[ (3*c)   / 2 ][ 30 + ((3*c)   % 2) ]),
+                .add_2    (mac_in[ (3*c+1) / 2 ][ 30 + ((3*c+1) % 2) ]),
+                .add_3    (mac_in[ (3*c+2) / 2 ][ 30 + ((3*c+2) % 2) ]),
+                .adder_out(ext_sum_raw[c])
+            );
+            
+            // Truncate to match Layer-1 tap normalization (Right shift 1)
+            assign ext_sum_correction[c] = ext_sum_raw[c][18:1];
+        end
     endgenerate
 
     // =========================================================================
-    // SECTION 2 — Orphan correction layer (ext_sum_correction)
+    // 3. STAGE 1 DATA ASSEMBLY (Interleaving Taps and Corrections)
+    // -------------------------------------------------------------------------
+    // Trees 0-7: 10 taps + 1 correction each (stride of 11)
+    // Trees 8-11: 10 taps each (stride of 10)
+    // Total: (8 * 11) + (4 * 10) = 88 + 40 = 128 elements
     // =========================================================================
-    // corr_out[c] = accurate conv25 partial sum for orphan correction c (0..7)
-    // See ext_sum_correction.sv for full explanation of the grouping logic.
-    // =========================================================================
-
-    logic signed [DATA_WIDTH-1:0] corr_out [0:N_CORRECTION-1];
-
-    ext_sum_correction #(
-        .N_TREES      (N_TREES),
-        .N_CORRECTION (N_CORRECTION),
-        .DATA_WIDTH   (DATA_WIDTH)
-    ) u_correction (
-        .mac_in   (mac_in),
-        .corr_out (corr_out)
-    );
-
-    // =========================================================================
-    // SECTION 3 — Stage 1 flat array  (128 entries)
-    // =========================================================================
-
     logic signed [DATA_WIDTH-1:0] flat_s1 [0:TOTAL_S1_INPUTS-1];
 
     genvar k;
     generate
-        // Trees 0–7: 10 taps then 1 correction (stride = 11)
+        // Fill first 88 slots (Trees 0-7: 10 taps + 1 correction each)
         for (t = 0; t < N_CORRECTION; t++) begin : gen_s1_corrected
-            for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_taps
-                assign flat_s1[t * (TAPS_PER_TREE + 1) + k] = tree_tap[t][k];
+            for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_s1_taps
+                assign flat_s1[ t * (TAPS_PER_TREE + 1) + k ] = tree_tap[t][k];
             end
-            assign flat_s1[t * (TAPS_PER_TREE + 1) + TAPS_PER_TREE] = corr_out[t];
+            // Append correction sum at the 11th slot of the block
+            assign flat_s1[ t * (TAPS_PER_TREE + 1) + TAPS_PER_TREE ] = ext_sum_correction[t];
         end
 
-        // Trees 8–11: 10 taps only (stride = 10), no correction needed
+        // Fill remaining 40 slots (Trees 8-11: 10 taps each, no corrections)
         for (t = N_CORRECTION; t < N_TREES; t++) begin : gen_s1_standard
-            for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_taps_std
-                assign flat_s1[N_CORRECTION * (TAPS_PER_TREE + 1)
-                               + (t - N_CORRECTION) * TAPS_PER_TREE + k]
-                       = tree_tap[t][k];
+            for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_s1_taps_std
+                assign flat_s1[ N_CORRECTION * (TAPS_PER_TREE + 1) + 
+                                (t - N_CORRECTION) * TAPS_PER_TREE + k ] = tree_tap[t][k];
             end
         end
     endgenerate
 
     // =========================================================================
-    // SECTION 4 — 32 Shaaban units with 3-way input MUX
+    // 2. BUS MAPPING & MUXING
     // =========================================================================
-
     genvar s, p;
     generate
-        for (s = 0; s < N_SHAABAN; s++) begin : gen_shaaban
+        for (s = 0; s < N_SHAABAN; s++) begin : gen_shb_bus
+            logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] src_s1, src_s2, src_s3;
 
-            logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] src_s1;
-            logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] src_s2;
-            logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] src_s3;
-            logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] shb_conv_in;
-
-            for (p = 0; p < INPUTS_PER_SHB; p++) begin : gen_sources
-
-                // Stage 1: 4 consecutive slots from flat_s1
-                assign src_s1[p*DATA_WIDTH +: DATA_WIDTH] =
-                       flat_s1[s * INPUTS_PER_SHB + p];
-
-                // Stage 2: 4 tree finals per active Shaaban; zero for inactive
-                if (s < S2_ACTIVE)
-                    assign src_s2[p*DATA_WIDTH +: DATA_WIDTH] =
-                           tree_final[s * INPUTS_PER_SHB + p];
-                else
+            for (p = 0; p < INPUTS_PER_SHB; p++) begin : map_sources
+                // Stage 1: 10 Taps + Correction
+                assign src_s1[p*DATA_WIDTH +: DATA_WIDTH] = flat_s1[s * INPUTS_PER_SHB + p];
+                
+                // Stage 2: Tree Finals
+                if (s < 3) // 12 trees / 4 inputs = 3 units
+                    assign src_s2[p*DATA_WIDTH +: DATA_WIDTH] = tree_final[s * INPUTS_PER_SHB + p];
+                else 
                     assign src_s2[p*DATA_WIDTH +: DATA_WIDTH] = '0;
 
-                // Stage 3: only Shaaban 0 slot 0 is live; all others zero
-                if (s == 0 && p == 0)
-                    assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = final_s3;
+                // Stage 3: Pairwise Sums
+                if (s < 2 && (s * INPUTS_PER_SHB + p) < 6)
+                    assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = s3_results[s * INPUTS_PER_SHB + p];
                 else
                     assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = '0;
-
             end
 
-            // Combinational 3-to-1 MUX
             always_comb begin
                 unique case (src_sel)
-                    2'b00:   shb_conv_in = src_s1;
-                    2'b01:   shb_conv_in = src_s2;
-                    2'b10:   shb_conv_in = src_s3;
-                    default: shb_conv_in = '0;
+                    2'b00:   shb_conv_bus[s] = src_s1;
+                    2'b01:   shb_conv_bus[s] = src_s2;
+                    2'b10:   shb_conv_bus[s] = src_s3;
+                    default: shb_conv_bus[s] = '0;
                 endcase
             end
-
-            shaban_unit_top #(
-                .DATA_WIDTH        (DATA_WIDTH),
-                .conv_bias_relu_num(INPUTS_PER_SHB),
-                .batch_norm_num    (INPUTS_PER_SHB),
-                .pool_num          (POOL_NUM)
-            ) u_shaaban (
-                .clk        (clk),
-                .rst        (rst),
-                .conv_in    (shb_conv_in),
-                .conv_bias  (conv_bias),
-                .mult_wight (mult_weight),
-                .add_wight  (add_weight),
-                .spike      (spike_out[s])
-            );
-
         end
     endgenerate
 
