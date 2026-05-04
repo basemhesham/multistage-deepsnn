@@ -72,7 +72,9 @@ Input (B, T, 256, 256, 1)
   Class Logits (0–3)
 ```
 
-> *[Figure 1: SNN Block Diagram — see attached Picture1]*
+<div align="center">
+<img width="2000" height="564" alt="Picture1" src="https://github.com/user-attachments/assets/9d2d1e2a-42d9-4687-b119-73937a786371" />
+</div>
 
 Each of the three convolutional blocks follows the same pattern:
 
@@ -128,6 +130,10 @@ The DSP48E2 slice is the central resource in this design. The accelerator maps v
 
 The 4,638 DSP48E2 slices provide sufficient headroom for Stage 1 (the most demanding stage), which consumes 4,000 DSPs — 98.1% of the available budget.
 
+<div align="center">
+    <img width="689" height="443" alt="image" src="https://github.com/user-attachments/assets/b76843a0-f010-40c9-b490-559f95578cb0" />
+</div>
+
 ### Operating Target
 
 | Parameter | Value |
@@ -146,6 +152,10 @@ The 4,638 DSP48E2 slices provide sufficient headroom for Stage 1 (the most deman
 Standard neural network inference processes the entire input image through each stage in sequence, storing the full feature map of each stage before advancing to the next. This is inefficient in hardware because it requires large memories to hold intermediate results and forces pipeline stages to stall waiting for predecessors.
 
 The **backtracking approach** solves this by working from the desired output backwards through every layer to determine the smallest input window that produces exactly one output element at the final stage. The hardware then tiles this minimum window across the image, enabling all three stages to work simultaneously in a streaming fashion.
+
+<div align="center">
+<img width="511" height="362" alt="Backtracking" src="https://github.com/user-attachments/assets/6da5f8c4-45ac-4046-8464-998e2c8c85dc" />
+</div>
 
 ### Stage 3: Final Output Dependency
 
@@ -200,8 +210,6 @@ The full 256×256 input frame is zero-padded to **260×260** (2 pixels on each s
 | 1 | LIF1 / MaxPool1 (2×2) | **10×10×32** | 20×20×32 |
 | 1 | CONV1 (5×5, no pad) | 20×20×32 | **24×24×1** |
 | — | Padded input crop | — | 24×24 from 260×260 |
-
-> *[Figure 2: Backtracking Diagram — see attached Backtracking image]*
 
 **Key result:** A single **24×24 crop** from the padded 260×260 input, processed through all three stages, produces exactly **one LIF3 output pixel** (across 128 channels). To fill the complete 4×4×128 LIF3 output map, 16 such crops are processed sequentially across 6 memory frames.
 
@@ -639,7 +647,9 @@ The three chains run in parallel. The Layer-1 3-input adder in the adder tree pe
 
 This reduces the naive 49-DSP cost to **27 DSPs per CONV25 unit** (3 × 9 = 27), achieving the same result.
 
-> *[Figure 3: CONV25 Internal Architecture — see attached image]*
+<div align="center">
+ <img width="1191" height="671" alt="image" src="https://github.com/user-attachments/assets/2594e342-6901-4c5e-a79c-4f5537ff692e" />
+</div>
 
 ---
 
