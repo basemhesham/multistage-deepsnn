@@ -1,3 +1,6 @@
+/home/users/svgpdv26q1yoshaban/Documents/lab00
+
+
 `timescale 1us/100ns
 module simple_adder_tb ();
 
