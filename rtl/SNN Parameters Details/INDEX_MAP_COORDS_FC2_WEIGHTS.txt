@@ -1,0 +1,387 @@
+Value: 18'b000000000000000000 -> Coords/Indices: 1, 7, 8, 11, 15, 17, 26, 27, 28, 33, 35, 41, 43, 59, 62, 63, 66, 69, 74, 75, 77, 82, 95, 97, 101, 102, 128, 133, 139, 140, 145, 151, 152, 156, 168, 194, 198, 202, 207, 225, 241, 247, 257, 261, 263, 264, 271, 273, 278, 282, 283, 284, 289, 291, 297, 305, 315, 318, 319, 322, 325, 328, 330, 331, 333, 334, 338, 351, 353, 357, 358, 371, 384, 389, 395, 396, 401, 407, 408, 412, 424, 440, 450, 454, 458, 462, 463, 468, 481, 497, 503, 510, 513, 519, 520, 525, 527, 529, 538, 539, 540, 545, 547, 553, 571, 574, 575, 578, 581, 586, 589, 594, 609, 613, 614, 618, 645, 652, 657, 663, 664, 668, 680, 681, 696, 706, 710, 714, 719, 726, 737, 759, 766, 769, 772, 773, 775, 776, 783, 785, 794, 795, 796, 801, 803, 827, 831, 834, 837, 842, 845, 846, 850, 863, 865, 869, 870, 874, 896, 901, 907, 908, 913, 919, 920, 924, 936, 937, 952, 962, 966, 970, 975, 993, 1015, 1022
+Value: 18'b000000000000000001 -> Coords/Indices: 100, 125, 141, 215, 254, 299, 359, 433, 607, 640, 651, 707, 753, 764, 790, 843
+Value: 18'b000000000000000010 -> Coords/Indices: 49, 85, 169, 193, 206, 517, 566, 689, 718, 817, 853, 893
+Value: 18'b000000000000000011 -> Coords/Indices: 348, 779, 782, 811, 878, 883
+Value: 18'b000000000000000100 -> Coords/Indices: 78, 103, 356, 431, 449, 724, 943, 980, 995
+Value: 18'b000000000000000101 -> Coords/Indices: 195, 362
+Value: 18'b000000000000000110 -> Coords/Indices: 483
+Value: 18'b000000000000000111 -> Coords/Indices: 500, 567, 981
+Value: 18'b000000000000001001 -> Coords/Indices: 34, 477, 712, 818
+Value: 18'b000000000000001010 -> Coords/Indices: 316, 512, 694, 996
+Value: 18'b000000000000001011 -> Coords/Indices: 204, 482, 727
+Value: 18'b000000000000001100 -> Coords/Indices: 887
+Value: 18'b000000000000001101 -> Coords/Indices: 885, 912, 917
+Value: 18'b000000000000010000 -> Coords/Indices: 568
+Value: 18'b000000000000010001 -> Coords/Indices: 1004
+Value: 18'b000000000000010011 -> Coords/Indices: 65, 286, 327, 375
+Value: 18'b000000000000010100 -> Coords/Indices: 674, 810, 1017
+Value: 18'b000000000000010101 -> Coords/Indices: 135, 456, 473
+Value: 18'b000000000000010110 -> Coords/Indices: 370, 815
+Value: 18'b000000000000010111 -> Coords/Indices: 636, 978
+Value: 18'b000000000000011000 -> Coords/Indices: 4, 464
+Value: 18'b000000000000011001 -> Coords/Indices: 372, 453, 805, 876, 927
+Value: 18'b000000000000011010 -> Coords/Indices: 53, 546, 740, 982
+Value: 18'b000000000000011011 -> Coords/Indices: 113, 285
+Value: 18'b000000000000011100 -> Coords/Indices: 554, 797
+Value: 18'b000000000000011110 -> Coords/Indices: 180
+Value: 18'b000000000000011111 -> Coords/Indices: 190, 490, 721, 921
+Value: 18'b000000000000100001 -> Coords/Indices: 126, 298, 522, 821
+Value: 18'b000000000000100011 -> Coords/Indices: 47, 825
+Value: 18'b000000000000100100 -> Coords/Indices: 535, 720, 778
+Value: 18'b000000000000100101 -> Coords/Indices: 314
+Value: 18'b000000000000100110 -> Coords/Indices: 397, 841
+Value: 18'b000000000000100111 -> Coords/Indices: 867, 909
+Value: 18'b000000000000101000 -> Coords/Indices: 259, 768, 770
+Value: 18'b000000000000101001 -> Coords/Indices: 420, 573, 691
+Value: 18'b000000000000101010 -> Coords/Indices: 39, 293, 421, 489, 700, 715
+Value: 18'b000000000000101011 -> Coords/Indices: 317, 985
+Value: 18'b000000000000101100 -> Coords/Indices: 646, 808, 849
+Value: 18'b000000000000101101 -> Coords/Indices: 120, 361, 417, 570
+Value: 18'b000000000000101110 -> Coords/Indices: 173
+Value: 18'b000000000000101111 -> Coords/Indices: 235, 939
+Value: 18'b000000000000110000 -> Coords/Indices: 58, 104, 784, 888, 903, 948, 1005
+Value: 18'b000000000000110001 -> Coords/Indices: 979
+Value: 18'b000000000000110010 -> Coords/Indices: 111, 415, 502
+Value: 18'b000000000000110011 -> Coords/Indices: 6, 60, 292, 531, 603
+Value: 18'b000000000000110100 -> Coords/Indices: 385, 390, 498
+Value: 18'b000000000000110101 -> Coords/Indices: 363, 459, 504, 619, 992
+Value: 18'b000000000000110110 -> Coords/Indices: 117, 339, 693, 930, 967
+Value: 18'b000000000000110111 -> Coords/Indices: 847
+Value: 18'b000000000000111000 -> Coords/Indices: 323, 806, 858, 894, 941, 1011
+Value: 18'b000000000000111001 -> Coords/Indices: 354, 542, 758
+Value: 18'b000000000000111010 -> Coords/Indices: 228, 434, 435, 610, 677, 762
+Value: 18'b000000000000111011 -> Coords/Indices: 20, 487, 736, 774, 879
+Value: 18'b000000000000111100 -> Coords/Indices: 90, 114, 240, 729, 760, 781
+Value: 18'b000000000000111101 -> Coords/Indices: 38, 211, 270, 465, 671
+Value: 18'b000000000000111110 -> Coords/Indices: 307, 428
+Value: 18'b000000000000111111 -> Coords/Indices: 279, 301, 444, 866
+Value: 18'b000000000001000000 -> Coords/Indices: 310, 515, 682
+Value: 18'b000000000001000001 -> Coords/Indices: 476, 951, 958
+Value: 18'b000000000001000010 -> Coords/Indices: 236, 347, 508, 957
+Value: 18'b000000000001000011 -> Coords/Indices: 461
+Value: 18'b000000000001000100 -> Coords/Indices: 437, 977
+Value: 18'b000000000001000101 -> Coords/Indices: 16, 81, 690, 1003
+Value: 18'b000000000001000110 -> Coords/Indices: 208, 249, 438, 563, 745, 822, 906
+Value: 18'b000000000001000111 -> Coords/Indices: 2, 506, 579, 1008
+Value: 18'b000000000001001000 -> Coords/Indices: 732
+Value: 18'b000000000001001001 -> Coords/Indices: 153, 526, 892
+Value: 18'b000000000001001010 -> Coords/Indices: 79, 532, 544, 802, 889
+Value: 18'b000000000001001011 -> Coords/Indices: 199, 592
+Value: 18'b000000000001001100 -> Coords/Indices: 73
+Value: 18'b000000000001001101 -> Coords/Indices: 955
+Value: 18'b000000000001001110 -> Coords/Indices: 288
+Value: 18'b000000000001001111 -> Coords/Indices: 486
+Value: 18'b000000000001010000 -> Coords/Indices: 44, 595
+Value: 18'b000000000001010001 -> Coords/Indices: 541
+Value: 18'b000000000001010010 -> Coords/Indices: 99, 205, 965
+Value: 18'b000000000001010011 -> Coords/Indices: 787, 1010
+Value: 18'b000000000001010100 -> Coords/Indices: 116, 171
+Value: 18'b000000000001010110 -> Coords/Indices: 557
+Value: 18'b000000000001011000 -> Coords/Indices: 87
+Value: 18'b000000000001011001 -> Coords/Indices: 37
+Value: 18'b000000000001011011 -> Coords/Indices: 684
+Value: 18'b000000000001011100 -> Coords/Indices: 448, 807
+Value: 18'b000000000001011101 -> Coords/Indices: 872, 1020
+Value: 18'b000000000001011110 -> Coords/Indices: 266, 548
+Value: 18'b000000000001100000 -> Coords/Indices: 86, 129, 968, 999
+Value: 18'b000000000001100010 -> Coords/Indices: 40, 149, 562
+Value: 18'b000000000001100011 -> Coords/Indices: 699
+Value: 18'b000000000001100100 -> Coords/Indices: 210
+Value: 18'b000000000001100110 -> Coords/Indices: 938
+Value: 18'b000000000001100111 -> Coords/Indices: 929
+Value: 18'b000000000001101001 -> Coords/Indices: 511, 569, 932
+Value: 18'b000000000001101010 -> Coords/Indices: 219, 336, 989
+Value: 18'b000000000001101011 -> Coords/Indices: 873
+Value: 18'b000000000001101110 -> Coords/Indices: 755, 860
+Value: 18'b000000000001110000 -> Coords/Indices: 620
+Value: 18'b000000000001110010 -> Coords/Indices: 565
+Value: 18'b000000000001110111 -> Coords/Indices: 192
+Value: 18'b000000000001111000 -> Coords/Indices: 142, 251
+Value: 18'b000000000001111010 -> Coords/Indices: 137, 649
+Value: 18'b000000000001111011 -> Coords/Indices: 635
+Value: 18'b000000000001111101 -> Coords/Indices: 213
+Value: 18'b000000000010000001 -> Coords/Indices: 643
+Value: 18'b000000000010000010 -> Coords/Indices: 493
+Value: 18'b000000000010000101 -> Coords/Indices: 756
+Value: 18'b000000000010001000 -> Coords/Indices: 234
+Value: 18'b000000000010001001 -> Coords/Indices: 625
+Value: 18'b000000000010001010 -> Coords/Indices: 21
+Value: 18'b000000000010010010 -> Coords/Indices: 576
+Value: 18'b000000000010010101 -> Coords/Indices: 132
+Value: 18'b000000000010010110 -> Coords/Indices: 580
+Value: 18'b000000000010011000 -> Coords/Indices: 155
+Value: 18'b000000000010011010 -> Coords/Indices: 366, 634, 648
+Value: 18'b000000000010011110 -> Coords/Indices: 71
+Value: 18'b000000000010100000 -> Coords/Indices: 861
+Value: 18'b000000000010100011 -> Coords/Indices: 731
+Value: 18'b000000000010101000 -> Coords/Indices: 582
+Value: 18'b000000000010101001 -> Coords/Indices: 679
+Value: 18'b000000000010101111 -> Coords/Indices: 46
+Value: 18'b000000000010111000 -> Coords/Indices: 713
+Value: 18'b000000000010111101 -> Coords/Indices: 703
+Value: 18'b000000000011000001 -> Coords/Indices: 265
+Value: 18'b000000000011000101 -> Coords/Indices: 144, 445
+Value: 18'b000000000011000111 -> Coords/Indices: 25
+Value: 18'b000000000011001010 -> Coords/Indices: 751
+Value: 18'b000000000011001111 -> Coords/Indices: 56
+Value: 18'b000000000011010001 -> Coords/Indices: 560
+Value: 18'b000000000011010010 -> Coords/Indices: 76
+Value: 18'b000000000011010101 -> Coords/Indices: 343
+Value: 18'b000000000011011000 -> Coords/Indices: 226
+Value: 18'b000000000011011100 -> Coords/Indices: 605
+Value: 18'b000000000011100001 -> Coords/Indices: 708
+Value: 18'b000000000011100100 -> Coords/Indices: 150, 639
+Value: 18'b000000000011100110 -> Coords/Indices: 669
+Value: 18'b000000000011101111 -> Coords/Indices: 697
+Value: 18'b000000000011110001 -> Coords/Indices: 730
+Value: 18'b000000000011111010 -> Coords/Indices: 735
+Value: 18'b000000000100000010 -> Coords/Indices: 158, 698
+Value: 18'b000000000100000100 -> Coords/Indices: 530
+Value: 18'b000000000100000110 -> Coords/Indices: 524
+Value: 18'b000000000100000111 -> Coords/Indices: 96
+Value: 18'b000000000100001000 -> Coords/Indices: 564
+Value: 18'b000000000100001001 -> Coords/Indices: 678
+Value: 18'b000000000100001010 -> Coords/Indices: 89
+Value: 18'b000000000100001100 -> Coords/Indices: 416
+Value: 18'b000000000100001110 -> Coords/Indices: 606
+Value: 18'b000000000100010001 -> Coords/Indices: 232
+Value: 18'b000000000100011110 -> Coords/Indices: 147
+Value: 18'b000000000100011111 -> Coords/Indices: 460
+Value: 18'b000000000100100000 -> Coords/Indices: 245
+Value: 18'b000000000100100011 -> Coords/Indices: 596
+Value: 18'b000000000100100101 -> Coords/Indices: 88
+Value: 18'b000000000100101100 -> Coords/Indices: 741
+Value: 18'b000000000100101101 -> Coords/Indices: 478
+Value: 18'b000000000100110011 -> Coords/Indices: 216, 686
+Value: 18'b000000000100110100 -> Coords/Indices: 148
+Value: 18'b000000000100111000 -> Coords/Indices: 72
+Value: 18'b000000000100111011 -> Coords/Indices: 31
+Value: 18'b000000000100111101 -> Coords/Indices: 253
+Value: 18'b000000000101000011 -> Coords/Indices: 432
+Value: 18'b000000000101000101 -> Coords/Indices: 368
+Value: 18'b000000000101001000 -> Coords/Indices: 154
+Value: 18'b000000000101001001 -> Coords/Indices: 238
+Value: 18'b000000000101010010 -> Coords/Indices: 402
+Value: 18'b000000000101010100 -> Coords/Indices: 374
+Value: 18'b000000000101100001 -> Coords/Indices: 321
+Value: 18'b000000000101101001 -> Coords/Indices: 419
+Value: 18'b000000000101101110 -> Coords/Indices: 280
+Value: 18'b000000000101110100 -> Coords/Indices: 365
+Value: 18'b000000000110000100 -> Coords/Indices: 399
+Value: 18'b000000000110000110 -> Coords/Indices: 386
+Value: 18'b111111111010110111 -> Coords/Indices: 349
+Value: 18'b111111111011000010 -> Coords/Indices: 976
+Value: 18'b111111111011001100 -> Coords/Indices: 655
+Value: 18'b111111111011010001 -> Coords/Indices: 987
+Value: 18'b111111111011010010 -> Coords/Indices: 577
+Value: 18'b111111111011010100 -> Coords/Indices: 10
+Value: 18'b111111111011011110 -> Coords/Indices: 98
+Value: 18'b111111111011100000 -> Coords/Indices: 826
+Value: 18'b111111111011100110 -> Coords/Indices: 276
+Value: 18'b111111111011101010 -> Coords/Indices: 536
+Value: 18'b111111111011101011 -> Coords/Indices: 23
+Value: 18'b111111111011101100 -> Coords/Indices: 599
+Value: 18'b111111111011101101 -> Coords/Indices: 309
+Value: 18'b111111111011111101 -> Coords/Indices: 14
+Value: 18'b111111111011111111 -> Coords/Indices: 716
+Value: 18'b111111111100000001 -> Coords/Indices: 642
+Value: 18'b111111111100000010 -> Coords/Indices: 61
+Value: 18'b111111111100000011 -> Coords/Indices: 701
+Value: 18'b111111111100000101 -> Coords/Indices: 675
+Value: 18'b111111111100001001 -> Coords/Indices: 624
+Value: 18'b111111111100001010 -> Coords/Indices: 29
+Value: 18'b111111111100001101 -> Coords/Indices: 105, 422
+Value: 18'b111111111100001111 -> Coords/Indices: 621
+Value: 18'b111111111100010000 -> Coords/Indices: 658
+Value: 18'b111111111100010001 -> Coords/Indices: 3
+Value: 18'b111111111100010010 -> Coords/Indices: 242, 1013
+Value: 18'b111111111100010011 -> Coords/Indices: 246
+Value: 18'b111111111100010100 -> Coords/Indices: 350
+Value: 18'b111111111100010101 -> Coords/Indices: 405
+Value: 18'b111111111100010110 -> Coords/Indices: 45, 916
+Value: 18'b111111111100010111 -> Coords/Indices: 738
+Value: 18'b111111111100011001 -> Coords/Indices: 203
+Value: 18'b111111111100011010 -> Coords/Indices: 630, 844
+Value: 18'b111111111100011110 -> Coords/Indices: 734
+Value: 18'b111111111100100011 -> Coords/Indices: 369
+Value: 18'b111111111100100101 -> Coords/Indices: 413, 814
+Value: 18'b111111111100100111 -> Coords/Indices: 492, 584
+Value: 18'b111111111100101010 -> Coords/Indices: 688
+Value: 18'b111111111100101011 -> Coords/Indices: 237, 922, 935, 944
+Value: 18'b111111111100101100 -> Coords/Indices: 799
+Value: 18'b111111111100101101 -> Coords/Indices: 804
+Value: 18'b111111111100101110 -> Coords/Indices: 824
+Value: 18'b111111111100110010 -> Coords/Indices: 187, 474, 946
+Value: 18'b111111111100110011 -> Coords/Indices: 856
+Value: 18'b111111111100110110 -> Coords/Indices: 179
+Value: 18'b111111111100110111 -> Coords/Indices: 252, 959
+Value: 18'b111111111100111001 -> Coords/Indices: 672, 949
+Value: 18'b111111111100111010 -> Coords/Indices: 223, 324, 857
+Value: 18'b111111111100111100 -> Coords/Indices: 656, 744
+Value: 18'b111111111100111101 -> Coords/Indices: 32, 174, 895
+Value: 18'b111111111100111110 -> Coords/Indices: 393
+Value: 18'b111111111100111111 -> Coords/Indices: 875, 926
+Value: 18'b111111111101000000 -> Coords/Indices: 864
+Value: 18'b111111111101000001 -> Coords/Indices: 1016
+Value: 18'b111111111101000010 -> Coords/Indices: 84, 163
+Value: 18'b111111111101000011 -> Coords/Indices: 660, 704
+Value: 18'b111111111101000100 -> Coords/Indices: 217
+Value: 18'b111111111101000101 -> Coords/Indices: 159, 308, 1021
+Value: 18'b111111111101000110 -> Coords/Indices: 833
+Value: 18'b111111111101001000 -> Coords/Indices: 83, 231, 1018
+Value: 18'b111111111101001010 -> Coords/Indices: 859
+Value: 18'b111111111101001011 -> Coords/Indices: 64, 379, 537
+Value: 18'b111111111101001100 -> Coords/Indices: 765
+Value: 18'b111111111101001110 -> Coords/Indices: 165, 800
+Value: 18'b111111111101001111 -> Coords/Indices: 30, 312, 780
+Value: 18'b111111111101010000 -> Coords/Indices: 340, 441, 940
+Value: 18'b111111111101010001 -> Coords/Indices: 188, 902, 905, 915
+Value: 18'b111111111101010010 -> Coords/Indices: 209, 243
+Value: 18'b111111111101010011 -> Coords/Indices: 42, 57, 220, 329, 914
+Value: 18'b111111111101010100 -> Coords/Indices: 122
+Value: 18'b111111111101010110 -> Coords/Indices: 521
+Value: 18'b111111111101010111 -> Coords/Indices: 239
+Value: 18'b111111111101011000 -> Coords/Indices: 392, 931
+Value: 18'b111111111101011001 -> Coords/Indices: 792
+Value: 18'b111111111101011010 -> Coords/Indices: 70, 840
+Value: 18'b111111111101011011 -> Coords/Indices: 54, 303, 601, 942
+Value: 18'b111111111101011100 -> Coords/Indices: 244
+Value: 18'b111111111101011101 -> Coords/Indices: 984, 1001
+Value: 18'b111111111101011111 -> Coords/Indices: 80, 229
+Value: 18'b111111111101100000 -> Coords/Indices: 406, 466
+Value: 18'b111111111101100001 -> Coords/Indices: 255, 427, 485
+Value: 18'b111111111101100010 -> Coords/Indices: 67, 186, 659, 728
+Value: 18'b111111111101100101 -> Coords/Indices: 52
+Value: 18'b111111111101100110 -> Coords/Indices: 367
+Value: 18'b111111111101100111 -> Coords/Indices: 262, 335, 360
+Value: 18'b111111111101101000 -> Coords/Indices: 851
+Value: 18'b111111111101101010 -> Coords/Indices: 819
+Value: 18'b111111111101101101 -> Coords/Indices: 750
+Value: 18'b111111111101101110 -> Coords/Indices: 898
+Value: 18'b111111111101101111 -> Coords/Indices: 93, 972
+Value: 18'b111111111101110000 -> Coords/Indices: 583, 757, 964
+Value: 18'b111111111101110001 -> Coords/Indices: 18, 118, 391
+Value: 18'b111111111101110010 -> Coords/Indices: 258, 364, 480
+Value: 18'b111111111101110011 -> Coords/Indices: 201, 622
+Value: 18'b111111111101110101 -> Coords/Indices: 218
+Value: 18'b111111111101110111 -> Coords/Indices: 290, 436, 877, 1006
+Value: 18'b111111111101111000 -> Coords/Indices: 295, 786
+Value: 18'b111111111101111001 -> Coords/Indices: 109, 376, 491, 505, 880
+Value: 18'b111111111101111010 -> Coords/Indices: 185, 725
+Value: 18'b111111111101111011 -> Coords/Indices: 886
+Value: 18'b111111111101111100 -> Coords/Indices: 12, 130
+Value: 18'b111111111101111101 -> Coords/Indices: 48
+Value: 18'b111111111101111110 -> Coords/Indices: 382, 429, 494, 600
+Value: 18'b111111111101111111 -> Coords/Indices: 549
+Value: 18'b111111111110000000 -> Coords/Indices: 178, 287, 991
+Value: 18'b111111111110000010 -> Coords/Indices: 306, 346, 608
+Value: 18'b111111111110000011 -> Coords/Indices: 112, 269
+Value: 18'b111111111110000100 -> Coords/Indices: 19, 430, 969
+Value: 18'b111111111110000101 -> Coords/Indices: 911
+Value: 18'b111111111110000110 -> Coords/Indices: 268, 455
+Value: 18'b111111111110001000 -> Coords/Indices: 294, 442, 641, 997
+Value: 18'b111111111110001001 -> Coords/Indices: 862
+Value: 18'b111111111110001010 -> Coords/Indices: 127, 131
+Value: 18'b111111111110001100 -> Coords/Indices: 233, 302, 355
+Value: 18'b111111111110001101 -> Coords/Indices: 146, 221
+Value: 18'b111111111110001110 -> Coords/Indices: 484
+Value: 18'b111111111110001111 -> Coords/Indices: 274
+Value: 18'b111111111110010000 -> Coords/Indices: 248, 410, 1007
+Value: 18'b111111111110010011 -> Coords/Indices: 380, 777, 918
+Value: 18'b111111111110010100 -> Coords/Indices: 143, 160, 533, 960
+Value: 18'b111111111110010110 -> Coords/Indices: 742, 838
+Value: 18'b111111111110010111 -> Coords/Indices: 337, 452
+Value: 18'b111111111110011000 -> Coords/Indices: 222, 467
+Value: 18'b111111111110011001 -> Coords/Indices: 899, 928
+Value: 18'b111111111110011010 -> Coords/Indices: 409, 835, 973, 990
+Value: 18'b111111111110011100 -> Coords/Indices: 296
+Value: 18'b111111111110011101 -> Coords/Indices: 182, 670, 934, 988, 1000
+Value: 18'b111111111110011110 -> Coords/Indices: 475
+Value: 18'b111111111110011111 -> Coords/Indices: 94
+Value: 18'b111111111110100001 -> Coords/Indices: 426
+Value: 18'b111111111110100010 -> Coords/Indices: 666
+Value: 18'b111111111110100011 -> Coords/Indices: 1002
+Value: 18'b111111111110100100 -> Coords/Indices: 181, 197, 956
+Value: 18'b111111111110100101 -> Coords/Indices: 418
+Value: 18'b111111111110100110 -> Coords/Indices: 855
+Value: 18'b111111111110100111 -> Coords/Indices: 388, 496, 923, 954
+Value: 18'b111111111110101000 -> Coords/Indices: 717
+Value: 18'b111111111110101001 -> Coords/Indices: 51, 479
+Value: 18'b111111111110101010 -> Coords/Indices: 166, 200, 281, 882
+Value: 18'b111111111110101100 -> Coords/Indices: 543
+Value: 18'b111111111110101101 -> Coords/Indices: 398
+Value: 18'b111111111110101110 -> Coords/Indices: 676
+Value: 18'b111111111110101111 -> Coords/Indices: 108
+Value: 18'b111111111110110000 -> Coords/Indices: 852
+Value: 18'b111111111110110001 -> Coords/Indices: 593, 746, 925, 1019
+Value: 18'b111111111110110010 -> Coords/Indices: 629
+Value: 18'b111111111110110011 -> Coords/Indices: 653, 854
+Value: 18'b111111111110110100 -> Coords/Indices: 170
+Value: 18'b111111111110110101 -> Coords/Indices: 196, 654, 953
+Value: 18'b111111111110110110 -> Coords/Indices: 673, 994, 1023
+Value: 18'b111111111110111000 -> Coords/Indices: 414, 472, 488, 572
+Value: 18'b111111111110111001 -> Coords/Indices: 345
+Value: 18'b111111111110111010 -> Coords/Indices: 189, 443
+Value: 18'b111111111110111100 -> Coords/Indices: 224, 702, 816
+Value: 18'b111111111110111101 -> Coords/Indices: 667, 820
+Value: 18'b111111111110111110 -> Coords/Indices: 446
+Value: 18'b111111111110111111 -> Coords/Indices: 884
+Value: 18'b111111111111000000 -> Coords/Indices: 509, 897
+Value: 18'b111111111111000001 -> Coords/Indices: 24
+Value: 18'b111111111111000010 -> Coords/Indices: 107, 157, 304, 1014
+Value: 18'b111111111111000011 -> Coords/Indices: 172
+Value: 18'b111111111111000100 -> Coords/Indices: 124
+Value: 18'b111111111111000101 -> Coords/Indices: 92
+Value: 18'b111111111111000110 -> Coords/Indices: 36, 528, 588, 644, 695
+Value: 18'b111111111111001000 -> Coords/Indices: 598, 986
+Value: 18'b111111111111001010 -> Coords/Indices: 344, 910
+Value: 18'b111111111111001011 -> Coords/Indices: 161, 167, 403, 829
+Value: 18'b111111111111001100 -> Coords/Indices: 191, 552
+Value: 18'b111111111111001101 -> Coords/Indices: 743, 752
+Value: 18'b111111111111001110 -> Coords/Indices: 383
+Value: 18'b111111111111001111 -> Coords/Indices: 749
+Value: 18'b111111111111010000 -> Coords/Indices: 136, 162, 662
+Value: 18'b111111111111010010 -> Coords/Indices: 275, 377
+Value: 18'b111111111111010011 -> Coords/Indices: 123, 176
+Value: 18'b111111111111010100 -> Coords/Indices: 91, 250, 604, 839
+Value: 18'b111111111111010101 -> Coords/Indices: 709
+Value: 18'b111111111111010110 -> Coords/Indices: 633, 650
+Value: 18'b111111111111010111 -> Coords/Indices: 723, 950
+Value: 18'b111111111111011000 -> Coords/Indices: 134
+Value: 18'b111111111111011001 -> Coords/Indices: 447, 585, 747
+Value: 18'b111111111111011010 -> Coords/Indices: 499, 550, 791
+Value: 18'b111111111111011011 -> Coords/Indices: 164, 230, 342, 394, 628, 692, 836, 904
+Value: 18'b111111111111011101 -> Coords/Indices: 326, 631, 665
+Value: 18'b111111111111011110 -> Coords/Indices: 501, 722
+Value: 18'b111111111111011111 -> Coords/Indices: 121, 404, 638
+Value: 18'b111111111111100000 -> Coords/Indices: 110, 711, 763, 812
+Value: 18'b111111111111100001 -> Coords/Indices: 767
+Value: 18'b111111111111100010 -> Coords/Indices: 387, 632
+Value: 18'b111111111111100011 -> Coords/Indices: 313, 591, 890
+Value: 18'b111111111111100100 -> Coords/Indices: 0, 400, 411, 793
+Value: 18'b111111111111100101 -> Coords/Indices: 495
+Value: 18'b111111111111100110 -> Coords/Indices: 518, 754, 971
+Value: 18'b111111111111100111 -> Coords/Indices: 602, 626, 733
+Value: 18'b111111111111101000 -> Coords/Indices: 469
+Value: 18'b111111111111101001 -> Coords/Indices: 68, 378, 439, 551, 748, 933
+Value: 18'b111111111111101010 -> Coords/Indices: 332, 373, 813
+Value: 18'b111111111111101011 -> Coords/Indices: 556, 623
+Value: 18'b111111111111101100 -> Coords/Indices: 771
+Value: 18'b111111111111101101 -> Coords/Indices: 138, 457
+Value: 18'b111111111111101110 -> Coords/Indices: 13, 798
+Value: 18'b111111111111101111 -> Coords/Indices: 832, 998
+Value: 18'b111111111111110000 -> Coords/Indices: 183, 300
+Value: 18'b111111111111110001 -> Coords/Indices: 256, 616, 900
+Value: 18'b111111111111110010 -> Coords/Indices: 260, 352, 471
+Value: 18'b111111111111110011 -> Coords/Indices: 50, 516, 559, 683, 1012
+Value: 18'b111111111111110100 -> Coords/Indices: 320, 423, 789
+Value: 18'b111111111111110101 -> Coords/Indices: 470, 848
+Value: 18'b111111111111110111 -> Coords/Indices: 311, 523, 615, 685
+Value: 18'b111111111111111000 -> Coords/Indices: 119, 514, 611, 661, 881
+Value: 18'b111111111111111001 -> Coords/Indices: 277, 558, 761, 891
+Value: 18'b111111111111111010 -> Coords/Indices: 212, 341, 788, 947, 983
+Value: 18'b111111111111111011 -> Coords/Indices: 55, 272, 507, 687, 871
+Value: 18'b111111111111111100 -> Coords/Indices: 9, 175, 177, 425
+Value: 18'b111111111111111101 -> Coords/Indices: 227, 451, 555, 590, 647, 705, 809, 868, 961
+Value: 18'b111111111111111110 -> Coords/Indices: 214, 597, 617, 739, 823, 828
+Value: 18'b111111111111111111 -> Coords/Indices: 5, 22, 106, 115, 184, 267, 381, 534, 561, 587, 612, 627, 637, 830, 945, 963, 974, 1009
