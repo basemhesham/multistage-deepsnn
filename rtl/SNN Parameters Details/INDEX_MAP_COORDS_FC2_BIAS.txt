@@ -1,4 +1,0 @@
-Value: 18'b000000000000010001 -> Coords/Indices: 0
-Value: 18'b000000000010011010 -> Coords/Indices: 3
-Value: 18'b111111111101101001 -> Coords/Indices: 2
-Value: 18'b111111111111011101 -> Coords/Indices: 1
