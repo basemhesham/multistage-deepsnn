@@ -38,7 +38,7 @@ To minimize hardware area, unique weight values are extracted per layer and addr
 
 | Layer  | Total  | Unique | Reduction |
 |--------|--------|--------|-----------|
-| CONV1  | 800    | 58     | 92.8%     |
+| CONV1  | 800    | 264    | 67%       |
 | CONV2  | 18432  | 362    | 98.0%     |
 | CONV3  | 73728  | 318    | 99.6%     |
 | BN1_W  | 32     | 32     | 0.0%      |
