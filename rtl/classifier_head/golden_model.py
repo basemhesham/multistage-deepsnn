@@ -1,17 +1,17 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////
-// Author    : Ahmad Khattab
-// Date      : 5/13/26
-// File      : golden_model.py
-// Status    : finalized
-// Goal      : Fixed-point golden model for FC1 and FC2 layers.
-//             Reads weight/bias parameter files, computes expected outputs
-//             using the same Q7.10 arithmetic as the RTL hardware.
-//
-// Usage:
-//     python golden_model.py                         # both layers, 5 test cases
-//     python golden_model.py --fc1 --num-cases 10    # FC1 with 10 cases
-//     python golden_model.py --fc2 --random-seed 42  # FC2 with custom seed
-//////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+# Author    : Ahmad Khattab
+# Date      : 5/13/26
+# File      : golden_model.py
+# Status    : finalized
+# Goal      : Fixed-point golden model for FC1 and FC2 layers.
+#             Reads weight/bias parameter files, computes expected outputs
+#             using the same Q7.10 arithmetic as the RTL hardware.
+#
+# Usage:
+#     python golden_model.py                         # both layers, 5 test cases
+#     python golden_model.py --fc1 --num-cases 10    # FC1 with 10 cases
+#     python golden_model.py --fc2 --random-seed 42  # FC2 with custom seed
+# ////////////////////////////////////////////////////////////////////////////////////////////////
 
 import sys, os, re, random, argparse
 
