@@ -25,8 +25,8 @@ module conv9_adder #(
     parameter int PROD_W = 36,   // input product width
     parameter int OUT_W  = 40    // output sum width
 )(
-    input  wire [PROD_W-1:0] m [0:8],     // 9 products
-    output logic [OUT_W-1:0] Pixel_Out    // accumulated sum
+    input  wire signed [PROD_W-1:0] m [0:8],     // 9 products
+    output logic signed [OUT_W-1:0] Pixel_Out    // accumulated sum
 );
 
     // ── Level 1: 4 pair sums (36-bit + 36-bit → 37-bit) ─────────────────────
