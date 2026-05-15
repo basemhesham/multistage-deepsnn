@@ -840,9 +840,223 @@ With all 32 filters computing simultaneously, Stage 1 produces **32 output pixel
 
 ## 8. Memory Control & Frame Mapping
 
-> *This section will be completed in a future update.*
+### 8.1 The Architectural Challenge: Virtual Sliding Windows
+
+In Stage 2 of the MultiStage-DeepSNN, the accelerator processes a $3 \times 3$ convolution with 32 input channels. A traditional hardware approach would use one of two methods:
+
+1. **Line Buffers / Shift Registers:** Physically shifting pixel data through registers to create a sliding window.
+2. **Standard RAM Access:** Using a CPU-like controller to fetch 9 individual pixels for every clock cycle.
+
+**The Stage 2 Problem:**
+
+* **Power & Area Constraints:** With a 256×256 input resolution, physically shifting thousands of 18-bit fixed-point values every cycle consumes excessive power and utilizes too many LUTs/Registers.
+* **Throughput Bottleneck:** Standard RAM fetching is too slow. To keep the 12 shared convolution engines saturated, the system would need to perform 108 memory reads per cycle ($12 \text{ engines} \times 9 \text{ pixels}$), which exceeds the port limit of FPGA BRAMs.
+
+**The Solution: The Virtual Sliding Window**
+Instead of moving data to the engines, we move the **engines' focus** across a static data block. We load a wide "strip" of spatial data into a 3200-bit bit-vector (`mem`). We then use a massive combinational multiplexer tree to "point" the input pins of the 12 convolution engines to specific bit-indices within that vector.
+
+By changing a 3-bit control signal (`frame`), the hardware instantly re-routes the connections. This allows the same physical DSP pool to "slide" across different spatial regions of the image in a single clock cycle with **zero data-shuffling overhead**. This is critical for Stage 2, where the 32-channel depth requires the spatial logic to remain extremely efficient to meet the 40MHz timing constraint.
 
 ---
+
+This section defines the hardware interface for the `mem_mapping` module in Stage 2. It details how a massive 3200-bit input bus is reorganized into a structured array that the downstream convolution engines can consume.
+
+---
+
+### 8.2 Hardware Interface & I/O (Stage 2 Specifics)
+
+The `mem_mapping` module acts as a high-speed "unpacker" and "router." It takes a wide spatial slice from memory and transforms it into a multidimensional array that separates different filter iterations and spatial pixel positions.
+
+#### I/O Signal Specification
+
+The module interface is defined as follows:
+
+| Signal Name | Direction | Data Type / Size | Description |
+| --- | --- | --- | --- |
+| `clk` | Input | `logic` | System clock (40 MHz). |
+| `arst_n` | Input | `logic` | Asynchronous active-low reset. |
+| `frame` | Input | `logic [2:0]` | Spatial control (1–6) determining the grid region. |
+| `mem` | Input | `logic [3199:0]` | **Input Bit-Vector**: A flattened 1D array of grid activations. |
+| `fil_in` | Output | `logic [31:0][39:0]` | **2D Output Buffer**: 32 Filter iterations $\times$ 40 pixels. |
+
+#### The 3200-bit Input Vector (`mem`)
+
+In Stage 2, the memory controller provides a 3200-bit word. This word represents a horizontal "strip" of the 2D spatial grid. Because Stage 2 requires 32-channel depth, the memory is organized so that these 3200 bits contain the necessary spatial data for the current window.
+
+* **Capacity:** Each bit in this vector represents a spike/activation from the previous layer.
+* **Organization:** The vector is treated as a linear resource that the `frame` logic "carves" into smaller windows.
+
+#### The 2D Output Array (`fil_in`)
+
+The primary output of this module is the `fil_in[31:0][39:0]` array. This structure is critical for the Stage 2 pipeline:
+
+1. **Filter Dimension `[31:0]`:** This represents the 32 filter channels. Each "row" in this array corresponds to a specific filter's spatial data.
+2. **Spatial Dimension `[39:0]`:** Each "column" holds 40 bits of spatial data. This is wider than a single $3 \times 3$ window because it encompasses the full span needed to feed 12 convolution engines simultaneously across the grid.
+
+#### Master Control: The `frame` Signal
+
+The 3-bit `frame` signal is the master selector. It tells the combinational logic which 40 bits of the 3200-bit `mem` vector should be routed to which filter row in the `fil_in` array. Without this signal, the convolution engines would be "blind" to their position on the $256 \times 256$ grid.
+
+---
+
+**In the next section, we will break down the "Frame Strategy"—how these 6 frames actually divide the grid spatially.**
+
+This section details the **6-Frame Spatial Strategy**. It explains how the grid is partitioned to ensure that 12 shared convolution engines can cover the entire $256 \times 256$ spatial area without leaving gaps or requiring redundant hardware.
+
+---
+
+### 8.3 The 6-Frame Spatial Strategy (The Concept)
+
+In Stage 2, the hardware must slide a $3 \times 3$ kernel across the input grid. To optimize throughput, we don't process one pixel at a time; we process **12 windows simultaneously** in a "sliding band." The `frame` signal (1–6) determines where this band is located on the grid.
+
+#### A. Vertical Partitioning: Top vs. Bottom Clusters
+
+To maximize vertical reuse of data, the 12 convolution engines are split into two groups that work in parallel on adjacent rows:
+
+* **Top Orientation (Engines 1, 2, 5, 6, 9, 10):** These process the upper part of the band (e.g., Rows $N, N+1, N+2$).
+* **Bottom Orientation (Engines 3, 4, 7, 8, 11, 12):** These process the lower part of the band (e.g., Rows $N+1, N+2, N+3$).
+
+By overlapping these orientations, the hardware calculates two vertical rows of the output feature map in a single horizontal sweep.
+
+#### B. Spatial Frame Definitions
+
+The 6 frames implement four distinct traversal patterns to cover the grid's unique geometry and boundary conditions:
+
+| Frame | Pattern Type | Spatial Behavior |
+| --- | --- | --- |
+| **1, 4, 5** | **Continuous Sweep** | Standard linear horizontal progression. These frames handle the "meat" of the grid where data is contiguous. |
+| **2** | **Maximum Span** | Utilizes the full 40-input width of the buffer. It uses "Top-Top-Bottom-Bottom" clustering to reach the furthest horizontal extent of the memory strip. |
+| **3** | **Hybrid / Jump** | Combines high-density overlapping (1-column strides) for the first 8 engines with a large spatial "jump" for the last 4 engines to reach the grid boundary. |
+| **6** | **Truncated Edge** | A specialized "cleanup" frame. It only activates the first 4 engines to finish a partial row, while the remaining 8 are tied to zero. |
+
+#### C. Overlap and Continuity
+
+A critical requirement for Stage 2 is maintaining $3 \times 3$ continuity.
+
+* **Horizontal Continuity:** Frames are designed so that the last column of Frame $N$ aligns with the first column of Frame $N+1$.
+* **Padding Handling:** Because the indices are hard-coded per frame, the "padding" is implicit. If a frame reaches the edge of the $256 \times 256$ grid, the mapping logic simply routes `0` to those specific engine inputs, satisfying the SNN's zero-padding requirement without extra control logic.
+
+By cycling through these 6 frames, the `mem_mapping` module ensures that every coordinate of the input feature map is visited exactly once by the convolution pool.
+
+---
+
+**Next, we will look at Section 8.4: Mathematical Backtracking & Addressing—the actual formulas used to calculate these indices.**
+
+This section dives into the mathematical "Backtracking" logic used to generate the bit-indices. It explains how we bridge the gap between a 2D spatial coordinate on the grid and a 1D bit-location in the 3200-bit memory vector.
+
+---
+
+### 8.4 Mathematical Backtracking & Addressing (The "How")
+
+The power of the `mem_mapping` module comes from its "correct-by-construction" addressing. To generate the RTL, we used a mathematical backtracking approach: starting from the physical pins of the 12 Convolution Engines and working backward to the memory bit-index.
+
+#### A. The Linearization Formula
+
+The 3200-bit `mem` bus represents a flattened version of the spatial grid. To locate any specific pixel $(row, col)$, we apply a linearization formula based on the architecture's grid constants:
+
+* **ROW_STEP (320):** The number of bits to skip to move down one vertical row.
+* **COL_STEP (32):** The number of bits to skip to move one horizontal column.
+
+The absolute bit-index for any pixel is:
+
+
+$$Bit\_Index = (row \times 320) + (col \times 32) + Offset$$
+
+#### B. The Backtracking Methodology
+
+For every Frame (1–6), the following steps were taken to determine the routing:
+
+1. **Pin Identification:** Identify the target engine and its $3 \times 3$ kernel input (e.g., Engine 5, Input 1).
+2. **Coordinate Assignment:** Determine the $(row, col)$ coordinate that "Engine 5, Input 1" must process during "Frame 2."
+3. **Index Calculation:** Apply the Linearization Formula to find the exact bit-index in the 3200-bit vector.
+4. **Offset Expansion:** Repeat the calculation 32 times, adding an increment of `1` for each filter channel ($Offset = 0$ to $31$).
+
+#### C. Grid Mapping Example
+
+Consider a window for **Engine 1 (Top Orientation)** starting at $(0,0)$. Its $3 \times 3$ kernel inputs map to the following bit-indices at $Offset=0$:
+
+| Kernel Position | Coordinate $(r, c)$ | Formula Calculation | Bit-Index |
+| --- | --- | --- | --- |
+| **Top-Left (In 1)** | $(0, 0)$ | $(0 \times 320) + (0 \times 32)$ | `mem[0]` |
+| **Top-Mid (In 2)** | $(0, 1)$ | $(0 \times 320) + (1 \times 32)$ | `mem[32]` |
+| **Mid-Left (In 4)** | $(1, 0)$ | $(1 \times 320) + (0 \times 32)$ | `mem[320]` |
+| **Bottom-Right (In 9)** | $(2, 2)$ | $(2 \times 320) + (2 \times 32)$ | `mem[704]` |
+
+#### D. Implementation of the "Jump" Logic
+
+When a frame requires a "Spatial Jump" (as seen in Frame 2 or 3), the backtracking logic simply updates the $(row, col)$ anchors. For instance, if Engine 9 needs to jump 16 columns over, the formula automatically scales the `COL_STEP` portion:
+
+
+$$Index = (row \times 320) + ((col+16) \times 32)$$
+
+
+This results in the non-contiguous memory indices (e.g., `mem[192]`, `mem[768]`) seen in the final RTL code.
+
+---
+
+**Next, we will conclude with Section 8.5: Automated RTL Generation, which analyzes the final code and the Python-to-Verilog workflow.**
+
+This final section documents the transition from mathematical theory to physical RTL. It explains why a Python-based "Spatial Compiler" was used and how to interpret the resulting Verilog code.
+
+---
+
+### 8.5 Automated RTL Generation (The "Spatial Compiler")
+
+The `mem_mapping` module is the largest combinational block in the Stage 2 architecture. Because it contains **1,280 unique case statements**, manual entry was rejected in favor of an automated Python-to-Verilog workflow.
+
+#### A. Why Automation was Required
+
+Manual RTL coding at this scale introduces three critical risks:
+
+1. **Index Fatigue:** Calculating 1,280 bit-indices manually (e.g., `mem[192]`, `mem[768]`) inevitably leads to "off-by-one" errors that are nearly impossible to debug in hardware.
+2. **Structural Rigidity:** If the grid constants (`COL_STEP` or `ROW_STEP`) changed during hardware-software co-design, a manual module would require a complete rewrite.
+3. **Boundary Complexity:** Ensuring that "Frame 6" correctly drives zeros to unused engines while "Frame 2" correctly jumps 16 columns requires consistent logic that only a script can guarantee.
+
+#### B. The Generation Workflow
+
+We developed a script that acts as a **Spatial Compiler**. It takes the high-level grid requirements as input and "compiles" them into hard-wired Verilog assignments:
+
+1. **Input:** Grid Dimensions ($256 \times 256$), Step Constants (32, 320), and Frame Definitions.
+2. **Process:** The script iterates through 32 filter offsets and 40 input indices, applying the backtracking formula for each of the 6 frames.
+3. **Output:** A fully synthesizable `mem_mapping.v` file containing the optimized `always_comb` block.
+
+#### C. Snippet Analysis: Interpreting the RTL
+
+The generated code implements the spatial routing as a direct lookup table. This allows the synthesis tool (Vivado) to map the logic directly into the FPGA's routing fabric (MUXes and wires) rather than using computational logic.
+
+```systemverilog
+// ========================================
+// FILTER OFFSET: 0 (The first channel iteration)
+// ========================================
+
+// Mapping logic for Input Index 0
+case(frame)
+  1: fil_in[0][0] = mem[0];     // (Row 0, Col 0) -> Standard Start
+  2: fil_in[0][0] = mem[192];   // (Row 0, Col 6) -> Spatial Jump in Frame 2
+  3: fil_in[0][0] = mem[768];   // (Row 2, Col 12) -> Vertical/Horizontal Shift
+  4: fil_in[0][0] = mem[1344];  // (Row 4, Col 6)
+  5: fil_in[0][0] = mem[1920];  // (Row 6, Col 0)
+  6: fil_in[0][0] = mem[2112];  // (Row 6, Col 6) -> Edge Terminal Point
+  default: fil_in[0][0] = 0;    // Hardware-level padding
+endcase
+
+```
+
+**Key Code Features:**
+
+* **`fil_in[0][0]`**: The first index `[0]` represents the 0th Filter iteration. The second index `[0]` is the first of the 40 spatial pixels.
+* **`mem[192]`**: This hard-coded index is the final result of the backtracking formula. By providing the constant directly, the FPGA avoids performing any multiplication or addition at runtime.
+* **Default Case**: By explicitly setting the `default` to `0`, we ensure that any undefined frame state results in a "Safe Zero," preventing the SNN from processing "garbage" data and maintaining zero-padding integrity.
+
+### 8.6 Summary of Benefits for Stage 2
+
+By documenting these five sub-sections, we see how the `mem_mapping` module solves the Stage 2 throughput problem. It replaces power-hungry data movement with a static, bit-level "viewing" system that is:
+
+* **Deterministic:** Every pixel is exactly where the DSP expects it.
+* **Low Power:** Minimal switching activity as data stays static in the `mem` vector.
+* **Scalable:** The same Python script can generate mapping for Stage 3 (64 channels) by simply updating the offset loop from 32 to 64.
+
+  
 
 ## 9. Classifier Head — GAP, FC1, FC2
 
