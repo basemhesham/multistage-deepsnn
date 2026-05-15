@@ -677,6 +677,97 @@ This reduces the naïve 49-DSP cost to **27 DSPs per CONV25 unit** (3 × 9 = 27)
 
 ---
 
+Based on the updated and much more detailed `README (1).md` you provided, you have a beautifully structured document.
+
+Since the new section specifically explains how the inputs are routed to form the **CONV25** units using the 12 blocks of 32 `conv9` units, the absolute best place to put it is in **Section 5 (Stage 1 — 5 × 5 Convolution Architecture)**, immediately after the hardware explanation of the CONV25 unit.
+
+I recommend inserting it as a new subsection **`5.2.1 Data Routing and Input Mapping for CONV25`**, right between **`5.2 The CONV25 Unit`** and **`5.3 The Shaaban Unit — Backend Processing`**.
+
+Here is exactly how it will look in your markdown file:
+
+```markdown
+  Layer-1 adder (1 DSP):  sum_A + sum_B + sum_C → CONV25 output
+
+```
+
+The three chains run in parallel. The Layer-1 3-input adder performs the final summation:
+
+```
+  9 (cascade chain) + 1 (Layer-1 adder) = 10 delays total
+
+```
+
+This reduces the naïve 49-DSP cost to **27 DSPs per CONV25 unit** (3 × 9 = 27).
+
+---
+
+### 5.2.1 Data Routing and Input Mapping for CONV25 (The Shift Strategy)
+
+To build the CONV25 units efficiently, the architecture relies on instantiating base `conv9` modules in blocks of 32. Since three `conv9` modules are combined to form one CONV25 unit, a strict block of 32 yields 10 complete CONV25 units, leaving exactly 2 `conv9` modules "hanging" without a third partner (32 ÷ 3 = 10, remainder 2).
+
+To process the entire memory array seamlessly across 12 such blocks (384 `conv9` instances in total) without leaving any unused hardware or breaking the continuous data stream, a **hardware data routing strategy** is employed. Instead of changing the physical hardware instantiations, the continuous memory stream (`in_mem`) is dynamically re-arranged as it feeds into the inputs (`p_imag`) of the `conv9` units.
+
+Because 32 × 3 = 96 (which is perfectly divisible by 3), the required data-shuffling pattern naturally repeats every 3 blocks. The mapping cycles through three distinct states:
+
+* **State 0: The Straight Mapping (Blocks 0, 3, 6, 9)**
+* Starts perfectly aligned. The first 30 inputs feed 10 internal adders perfectly. The last 2 inputs become the "hanging" elements waiting for a 3rd partner in the next block.
+
+
+* **State 1: The 1-Shift Mapping (Blocks 1, 4, 7, 10)**
+* The block skips 1 memory element to use as the missing 3rd partner for the previous block's remainder. The next 30 inputs are shifted forward by 1. This leaves 1 hanging element at the end of the block.
+
+
+* **State 2: The 2-Shift Mapping (Blocks 2, 5, 8, 11)**
+* The block skips 2 memory elements to complete the group with the previous block's 1 hanging element. The next 30 inputs are shifted forward by 2. This perfectly consumes all elements, leaving **zero** hanging elements at the end, ready to reset to State 0.
+
+
+
+This cyclic mapping is implemented elegantly in SystemVerilog using a parameterized `generate` block with a modulo (`% 3`) operator to assign the correct memory indices at compile time:
+
+```systemverilog
+genvar b, j;
+
+generate
+    // Loop through all 12 blocks
+    for (b = 0; b < 12; b = b + 1) begin : gen_blocks
+        
+        // State 0: The Reset / Straight Mapping (Blocks 0, 3, 6, 9)
+        if (b % 3 == 0) begin : state_0
+            for (j = 0; j < 32; j = j + 1) begin : assign_state_0
+                assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j];
+            end
+        end
+        
+        // State 1: The 1-Shift Mapping (Blocks 1, 4, 7, 10)
+        else if (b % 3 == 1) begin : state_1
+            // The first 30 inputs take the next 30 memory slots (shifted by 1)
+            for (j = 0; j < 30; j = j + 1) begin : assign_state_1
+                assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 1];
+            end
+            // Handle the skipped element and the final hanging element
+            assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
+            assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 31];
+        end
+        
+        // State 2: The 2-Shift Mapping (Blocks 2, 5, 8, 11)
+        else begin : state_2
+            // The first 30 inputs take the next 30 memory slots (shifted by 2)
+            for (j = 0; j < 30; j = j + 1) begin : assign_state_2
+                assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 2];
+            end
+            // Handle the two skipped elements to complete the group
+            assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
+            assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 1];
+        end
+        
+    end
+endgenerate
+
+```
+
+---
+
+
 ### 5.3 The Shaaban Unit — Backend Processing
 
 After each CONV25 computes one dot product, the result passes through Bias & ReLU, Batch Normalisation, Max Pooling, and the LIF neuron via the shared **Shaaban unit** (described in Section 4.8).
