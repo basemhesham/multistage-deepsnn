@@ -859,13 +859,13 @@ By changing a 3-bit control signal (`frame`), the hardware instantly re-routes t
 
 ---
 
-This section defines the hardware interface for the `mem_mapping` module in Stage 2. It details how a massive 3200-bit input bus is reorganized into a structured array that the downstream convolution engines can consume.
+This section defines the hardware interface for the `frame_mapping_iterations_flters` module in Stage 2. It details how a massive 3200-bit input bus is reorganized into a structured array that the downstream convolution engines can consume.
 
 ---
 
 ### 8.2 Hardware Interface & I/O (Stage 2 Specifics)
 
-The `mem_mapping` module acts as a high-speed "unpacker" and "router." It takes a wide spatial slice from memory and transforms it into a multidimensional array that separates different filter iterations and spatial pixel positions.
+The `frame_mapping_iterations_flters` module acts as a high-speed "unpacker" and "router." It takes a wide spatial slice from memory and transforms it into a multidimensional array that separates different filter iterations and spatial pixel positions.
 
 #### I/O Signal Specification
 
@@ -936,7 +936,7 @@ A critical requirement for Stage 2 is maintaining $3 \times 3$ continuity.
 * **Horizontal Continuity:** Frames are designed so that the last column of Frame $N$ aligns with the first column of Frame $N+1$.
 * **Padding Handling:** Because the indices are hard-coded per frame, the "padding" is implicit. If a frame reaches the edge of the $256 \times 256$ grid, the mapping logic simply routes `0` to those specific engine inputs, satisfying the SNN's zero-padding requirement without extra control logic.
 
-By cycling through these 6 frames, the `mem_mapping` module ensures that every coordinate of the input feature map is visited exactly once by the convolution pool.
+By cycling through these 6 frames, the `frame_mapping_iterations_flters` module ensures that every coordinate of the input feature map is visited exactly once by the convolution pool.
 
 ---
 
@@ -948,7 +948,7 @@ This section dives into the mathematical "Backtracking" logic used to generate t
 
 ### 8.4 Mathematical Backtracking & Addressing (The "How")
 
-The power of the `mem_mapping` module comes from its "correct-by-construction" addressing. To generate the RTL, we used a mathematical backtracking approach: starting from the physical pins of the 12 Convolution Engines and working backward to the memory bit-index.
+The power of the `frame_mapping_iterations_flters` module comes from its "correct-by-construction" addressing. To generate the RTL, we used a mathematical backtracking approach: starting from the physical pins of the 12 Convolution Engines and working backward to the memory bit-index.
 
 #### A. The Linearization Formula
 
@@ -1002,7 +1002,7 @@ This final section documents the transition from mathematical theory to physical
 
 ### 8.5 Automated RTL Generation (The "Spatial Compiler")
 
-The `mem_mapping` module is the largest combinational block in the Stage 2 architecture. Because it contains **1,280 unique case statements**, manual entry was rejected in favor of an automated Python-to-Verilog workflow.
+The `frame_mapping_iterations_flters` module is the largest combinational block in the Stage 2 architecture. Because it contains **1,280 unique case statements**, manual entry was rejected in favor of an automated Python-to-Verilog workflow.
 
 #### A. Why Automation was Required
 
@@ -1018,7 +1018,7 @@ We developed a script that acts as a **Spatial Compiler**. It takes the high-lev
 
 1. **Input:** Grid Dimensions ($256 \times 256$), Step Constants (32, 320), and Frame Definitions.
 2. **Process:** The script iterates through 32 filter offsets and 40 input indices, applying the backtracking formula for each of the 6 frames.
-3. **Output:** A fully synthesizable `mem_mapping.v` file containing the optimized `always_comb` block.
+3. **Output:** A fully synthesizable `frame_mapping_iterations_flters.v` file containing the optimized `always_comb` block.
 
 #### C. Snippet Analysis: Interpreting the RTL
 
@@ -1048,13 +1048,166 @@ endcase
 * **`mem[192]`**: This hard-coded index is the final result of the backtracking formula. By providing the constant directly, the FPGA avoids performing any multiplication or addition at runtime.
 * **Default Case**: By explicitly setting the `default` to `0`, we ensure that any undefined frame state results in a "Safe Zero," preventing the SNN from processing "garbage" data and maintaining zero-padding integrity.
 
-### 8.6 Summary of Benefits for Stage 2
+This section documents the final stage of the data path: mapping the 40-bit spatial buffer into the physical pins of the 12 convolution engines. While the previous block handled memory-to-buffer routing, this block—the **Engine Input Mapper**—is responsible for carving those 40 bits into twelve overlapping $3 \times 3$ windows.
 
-By documenting these five sub-sections, we see how the `mem_mapping` module solves the Stage 2 throughput problem. It replaces power-hungry data movement with a static, bit-level "viewing" system that is:
+---
 
-* **Deterministic:** Every pixel is exactly where the DSP expects it.
-* **Low Power:** Minimal switching activity as data stays static in the `mem` vector.
-* **Scalable:** The same Python script can generate mapping for Stage 3 (64 channels) by simply updating the offset loop from 32 to 64.
+### 8.6 The Engine Pin-Out & Interface (I/O Summary)
+
+The `frame_input_mapping_brackets` module serves as the final "switchboard" before the mathematical operations begin. It is a purely combinational block designed to handle high-fanout routing with zero clock latency.
+
+| Signal Name | Direction | Data Type / Size | Description |
+| --- | --- | --- | --- |
+| `frame` | Input | `logic [2:0]` | Spatial control (1–6) determining the routing strategy. |
+| `in` | Input | `logic [39:0]` | **40-bit Spatial Buffer**: The flattened strip of grid data. |
+| `conv` | Output | `logic [11:0][8:0]` | **Engine Port Array**: 12 engines, each with 9 kernel inputs. |
+
+#### Port Breakdown
+
+* **Input `in[40]**`: This is a single-filter slice of the spatial grid. Each bit represents an activation (spike) at a specific coordinate $(x, y)$ relative to the current frame's origin.
+* **Output `conv[12][9]**`: This multidimensional array maps directly to the hardware math units.
+* The first dimension `[11:0]` corresponds to the **12 shared convolution engines**.
+* The second dimension `[8:0]` corresponds to the **9 pins of a $3 \times 3$ kernel** (Top-Left, Top-Mid, ..., Bottom-Right).
+
+
+
+---
+
+### 8.7 Kernel-to-Buffer Geometric Mapping (The "Why")
+
+The core challenge in Stage 2 is that 12 engines must process the grid simultaneously to meet the timing requirements, but they share a significant amount of data.
+
+#### The Fan-Out Challenge
+
+Each $3 \times 3$ convolution requires 9 input pixels. For 12 engines, the total "pin requirement" is $12 \times 9 = 108$ pins. However, we only have 40 bits of input data. This means that on average, **every bit in the input buffer is reused by nearly 3 different engines simultaneously.**
+
+#### The Flattened $3 \times 3$ Stride
+
+The input buffer `in[40]` represents a flattened grid section. To extract a $3 \times 3$ window, the mapping logic must "skip" indices to move between rows. For a standard stride, the mapping follows this geometric rule:
+
+* **Row 1:** `in[k]`, `in[k+1]`, `in[k+2]`
+* **Row 2:** `in[k+4]`, `in[k+5]`, `in[k+6]`
+* **Row 3:** `in[k+8]`, `in[k+9]`, `in[k+10]`
+
+#### Vertical Stacking (Top vs. Bottom)
+
+To optimize the data path, the engines are routed in two horizontal bands:
+
+1. **Top Engines (1, 2, 5, 6, 9, 10):** Anchored to the "Top" rows of the 40-bit buffer.
+2. **Bottom Engines (3, 4, 7, 8, 11, 12):** Anchored one row lower, reusing the middle and bottom rows of the Top group.
+
+This specific geometric reuse is what allows 12 engines to operate on only 40 bits of data without stalling.
+
+---
+
+**Next, we will look at Section 8.8: Backtracking to Buffer Indices—showing exactly how we calculated the indices for the `in[0]` to `in[39]` mapping.**
+
+This section details the internal coordinate system of the 40-bit buffer and the rules used to calculate the specific indices for each convolution engine.
+
+---
+
+### 8.8 Backtracking to Buffer Indices (The "How")
+
+To generate the mapping logic for `conv[c][i]`, we treat the 40-bit input buffer (`in[39:0]`) as a local 2D coordinate system. This step is distinct from the global memory mapping; it defines how the 12 engines "look" at the 40-bit slice they have been given.
+
+#### A. Local 2D Coordinate System
+
+The 40-bit buffer is logically organized into a small grid. While the exact width varies by frame strategy, the standard mapping assumes a width of 4 elements. The local index for any coordinate $(x, y)$ within this 40-bit slice is:
+
+
+$$Local\_Index = (y \times Width) + x$$
+
+#### B. The Engine Stride Rules
+
+Each engine $c$ (from 0 to 11) is assigned a "Top-Left Anchor" within the 40-bit buffer. From that anchor, the 9 kernel inputs are mapped using a consistent relative offset:
+
+| Kernel Input | Relative $(x, y)$ | Index Offset Formula |
+| --- | --- | --- |
+| `conv[c][0]` (Top-Left) | $(0, 0)$ | `Anchor + 0` |
+| `conv[c][1]` (Top-Mid) | $(1, 0)$ | `Anchor + 1` |
+| `conv[c][2]` (Top-Right) | $(2, 0)$ | `Anchor + 2` |
+| `conv[c][3]` (Mid-Left) | $(0, 1)$ | `Anchor + 4` |
+| `conv[c][4]` (Mid-Mid) | $(1, 1)$ | `Anchor + 5` |
+| `conv[c][5]` (Mid-Right) | $(2, 1)$ | `Anchor + 6` |
+| `conv[c][6]` (Bot-Left) | $(0, 2)$ | `Anchor + 8` |
+| `conv[c][7]` (Bot-Mid) | $(1, 2)$ | `Anchor + 9` |
+| `conv[c][8]` (Bot-Right) | $(2, 2)$ | `Anchor + 10` |
+
+#### C. Frame-Specific Anchor Shifts
+
+The `frame` signal doesn't just change which memory bits enter the buffer; it changes where each engine "starts" within that buffer.
+
+* **In Frame 1:** Engine 0 is anchored at `in[0]`. Its kernel covers indices based on the table above (0, 1, 2, 4, 5, 6, 8, 9, 10).
+* **In Frame 2 (The Jump):** To achieve a wider spatial span, the anchors for engines 4 through 11 are shifted by large constants (e.g., +16 or +20). This allows the hardware to skip columns in the grid without needing more than 40 bits of buffer space.
+
+#### D. Vertical Overlap Calculation
+
+The "Top" and "Bottom" clusters are handled by calculating two sets of anchors simultaneously.
+
+* **Top Engines:** Anchor $y$ starts at 0.
+* **Bottom Engines:** Anchor $y$ starts at 1.
+This result ensures that the `Mid` row of a Top engine and the `Top` row of a Bottom engine point to the **exact same index** in the 40-bit buffer, maximizing data reuse and reducing power consumption.
+
+---
+
+**Next, we will conclude with Section 8.9: Automation & RTL Verification, showing how the Python script produces the final SystemVerilog case statements.**
+
+This final section details the automated conversion of these geometric rules into synthesizable SystemVerilog.
+
+---
+
+### 8.9 Automation & RTL Verification (The "Engine Compiler")
+
+The mapping from a 40-bit buffer to 108 physical DSP pins is a high-density routing task. To ensure the $3 \times 3$ kernel integrity across all 12 engines and 6 frames, we utilized a Python-based **Engine Compiler**.
+
+#### A. The Generation Workflow
+
+The Python script operates as a nested loop that mimics the hardware's spatial requirements:
+
+1. **Frame Loop (1–6):** Selects the current spatial strategy.
+2. **Engine Loop (0–11):** Selects the target convolution engine.
+3. **Kernel Loop (0–8):** Iterates through the 9 positions of a $3 \times 3$ window.
+4. **Backtracking:** Calculates the index in `in[40]` using the Anchor + Offset formulas described in Section 8.8.
+5. **RTL Print:** Generates the explicit assignments seen in the code.
+
+#### B. Snippet Analysis: Proving the Spatial Alignment
+
+By looking at the generated code for **Frame 1**, we can see the geometric rules in action:
+
+```systemverilog
+3'd1: begin
+    // Engine 0 (Top Cluster) - Anchor: in[0]
+    conv[0][0] = in[0];  // Row 1: 0, 1, 2
+    conv[0][1] = in[1];
+    conv[0][2] = in[2];
+    conv[0][3] = in[4];  // Row 2: 4, 5, 6 (Width of 4 skip)
+    conv[0][4] = in[5];
+    conv[0][5] = in[6];
+    conv[0][6] = in[8];  // Row 3: 8, 9, 10
+    conv[0][7] = in[9];
+    conv[0][8] = in[10];
+
+    // Engine 1 (Top Cluster) - Anchor: in[4] (1-column stride)
+    conv[1][0] = in[4];  // Notice how Engine 1 starts where Engine 0's Row 2 began
+    conv[1][1] = in[5];
+    // ...
+end
+
+```
+
+**Why this code is efficient:**
+
+* **Zero Logic Gates:** This module contains no adders or multipliers. It synthesizes entirely into **wires and multiplexers**. On an FPGA, this is "free" logic that consumes virtually no power compared to active switching.
+* **Hard-Wired Continuity:** The script ensures that "Engine 1" is shifted exactly by the stride amount relative to "Engine 0." If this were done manually, a single typo in an index (e.g., `in[11]` instead of `in[10]`) would distort the feature map.
+* **Implicit Padding:** For frames where an engine's window would fall "off the grid," the script simply doesn't generate an assignment for that engine or sets it to `'0` (as seen in the `always_comb` initialization), providing hardware-level zero-padding.
+
+#### C. Synthesis & Timing
+
+Because the `frame_input_mapping_brackets` is a purely combinational fan-out, it has a very short "Logic Depth." This ensures that the data reaches the Convolution Engines well within the 25ns window of our 40MHz clock, leaving the majority of the clock cycle available for the high-speed DSP multiplication and accumulation.
+
+---
+
+**This concludes the documentation for the Stage 2 Memory and Frame Mapping logic.**
 
   
 
