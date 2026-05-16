@@ -3,7 +3,7 @@ import conv1_pkg::*;
  	output logic [17:0] conv9_in [3456]
  );
 
-// Compiled Assignment Logic
+ // Compiled Assignment Logic
 assign conv9_in[0] = UNIQUE_CONV1_WEIGHTS[25];
 assign conv9_in[1] = UNIQUE_CONV1_WEIGHTS[102];
 assign conv9_in[2] = UNIQUE_CONV1_WEIGHTS[23];
