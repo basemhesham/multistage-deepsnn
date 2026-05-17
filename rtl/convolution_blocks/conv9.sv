@@ -1,17 +1,14 @@
 `timescale 1ns / 1ps
 // =============================================================================
-// conv9.sv
-// -----------------------------------------------------------------------------
-// Single conv9 unit: computes a signed 9-element dot product.
+// conv9.sv - 9-tap dot product using DSP48E1 cascade (Virtex-7)
 //
-//   Pixel_Out = sum_{k=0}^{8}  P[k] * Q[k]
+// DSP48E1 routing rules:
+//   PCOUT → PCIN of next DSP only  (cascade wire, cannot drive fabric)
+//   P     → fabric (LUTs, FFs, ports)
 //
-// PORTS
-//   P [0:8][17:0]    - 9 signed pixel  values
-//   Q [0:8][17:0]    - 9 signed weight values
-//   Pixel_Out [39:0] - 40-bit signed dot product result
-//
-// PURELY COMBINATIONAL.
+// DSP 0   : PCIN=0,        PCOUT→chain[0],    P_fab=unused
+// DSP 1-7 : PCIN=chain[i-1], PCOUT→chain[i],  P_fab=unused
+// DSP 8   : PCIN=chain[7],   PCOUT=unused,     P_fab→Pixel_Out ✅
 // =============================================================================
 
 module conv9 #(
@@ -19,44 +16,38 @@ module conv9 #(
     parameter int PROD_W  = 36,
     parameter int OUT_W   = 40
 )(
-    input  wire logic signed [PIXEL_W-1:0] P [0:8],
-    input  wire logic signed [PIXEL_W-1:0] Q [0:8],
-    output logic      signed [OUT_W-1:0]   Pixel_Out
+    input  logic                       CLK,
+    input  logic signed [PIXEL_W-1:0]  P [0:8],
+    input  logic signed [PIXEL_W-1:0]  Q [0:8],
+    output logic signed [OUT_W-1:0]    Pixel_Out
 );
 
-    // Internal wire: 9 products from the multiplier stage
-    wire signed [PROD_W-1:0] m [0:8];
+    logic signed [47:0] chain [0:7];
+    logic signed [47:0] P_final;
 
-    // Signed intermediate arrays to avoid type mismatch on conv9_mul ports
-    // (conv9_mul expects unsigned bit vectors; we cast explicitly here)
-    wire logic signed [PIXEL_W-1:0] P_bits [0:8];
-    wire logic signed [PIXEL_W-1:0] Q_bits [0:8];
+    // DSP 0 - first
+    xbip_dsp48_macro_cascade #(.PIXEL_W(PIXEL_W)) dsp0 (
+        .CLK(CLK), .A(P[0]), .B(Q[0]),
+        .PCIN(48'sb0), .PCOUT(chain[0]), .P_fab()
+    );
 
-    genvar k;
+    // DSPs 1-7 - middle
+    genvar i;
     generate
-        for (k = 0; k < 9; k++) begin : gen_cast
-            assign P_bits[k] = P[k];
-            assign Q_bits[k] = Q[k];
+        for (i = 1; i < 8; i++) begin : gen_cascade
+            xbip_dsp48_macro_cascade #(.PIXEL_W(PIXEL_W)) dsp_i (
+                .CLK(CLK), .A(P[i]), .B(Q[i]),
+                .PCIN(chain[i-1]), .PCOUT(chain[i]), .P_fab()
+            );
         end
     endgenerate
 
-    // Stage 1: 9 signed multipliers
-    conv9_mul #(
-        .PIXEL_W (PIXEL_W),
-        .PROD_W  (PROD_W)
-    ) u_mul (
-        .P (P_bits),
-        .Q (Q_bits),
-        .m (m)
+    // DSP 8 - last: use P_fab to drive fabric, not PCOUT
+    xbip_dsp48_macro_cascade #(.PIXEL_W(PIXEL_W)) dsp8 (
+        .CLK(CLK), .A(P[8]), .B(Q[8]),
+        .PCIN(chain[7]), .PCOUT(), .P_fab(P_final)
     );
 
-    // Stage 2: signed adder tree -> final dot product
-    conv9_adder #(
-        .PROD_W (PROD_W),
-        .OUT_W  (OUT_W)
-    ) u_adder (
-        .m         (m),
-        .Pixel_Out (Pixel_Out)
-    );
+    assign Pixel_Out = P_final[OUT_W-1:0];
 
 endmodule
