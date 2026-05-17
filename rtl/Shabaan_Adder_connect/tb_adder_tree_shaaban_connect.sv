@@ -50,7 +50,7 @@ module tb_adder_tree_shaaban_connect;
     // ── DUT signals ───────────────────────────────────────────────────────────
     logic        rst;
     logic [1:0]  src_sel;
-    logic signed [N_TREES-1:0][31:0][DATA_WIDTH-1:0] mac_in;
+    logic signed [DATA_WIDTH-1:0] mac_in [0:N_TREES-1][0:31];
     logic signed [DATA_WIDTH-1:0] final_s3;
     logic signed [DATA_WIDTH-1:0] conv_bias, mult_weight, add_weight;
     logic [N_SHAABAN-1:0] spike_out;

@@ -103,8 +103,8 @@
 //  |       |                                                                   |
 //  |       |   Weight ROMs (distributed LUTs, always readable, zero latency)  |
 //  |       |   CONV1_W_MAP_OPT --> stage1_weights[3456]                       |
-//  |       |   CONV2_W_MAP     --> stage2_weights[3456]                       |
-//  |       |   CONV3_W_MAP_OPT --> stage3_weights[3456]  [STUB - not done]    |
+//  |       |   CONV2_W_MAP_OPT --> stage2_weights[3456]                       |
+//  |       |   CONV3_W_MAP_OPT --> stage3_weights[3456]                       |
 //  |       |   src_sel MUX --> active_weights[3456]                           |
 //  |       |                                                                   |
 //  |       v                                                                   |
@@ -172,7 +172,8 @@
 //   [x] Stage 2 input path (mem_mapping + frame_input_mapping)
 //   [x] src_sel pixel MUX (switches between Stage 1 and Stage 2/3 pixel inputs)
 //   [x] Stage 1 weight ROM (CONV1_W_MAP_OPT)
-//   [x] Stage 2 weight ROM (CONV2_W_MAP)
+//   [x] Stage 2 weight ROM (CONV2_W_MAP_OPT)
+//   [x] Stage 3 weight ROM (CONV3_W_MAP_OPT)
 //   [x] src_sel weight MUX (switches active weight ROM)
 //   [x] conv9 array (384 units, shared across all stages)
 //   [x] adder_tree_shaaban_connect (summation + stage routing)
@@ -180,10 +181,6 @@
 //   [x] mem_maping_1_2 write-back converter
 //
 //   INCOMPLETE / TODO:
-//   [ ] CONV3_W_MAP_OPT  -- Stage 3 weight ROM is commented out.
-//       Needs: Run Stage 3 training, export weights to package, generate module.
-//       Then: Uncomment the instantiation below and the 2'b10 case in weight MUX.
-//
 //   [ ] BRAM instantiation -- mem_mapped_internal currently goes nowhere.
 //       Needs: Instantiate a BRAM primitive (RAMB36E2 or UltraRAM) here.
 //       Connect: mem_mapped_internal --> BRAM write data port.
@@ -279,6 +276,15 @@ module deep_snn_top #(
     // The controller cycles frame 1->2->3->4->5->6 during Stage 2/3 operation.
     // TODO: connect to controller when ready.
     input  logic [FRAME_NO_WIDTH-1:0]     frame,
+
+    // -------------------------------------------------------------------------
+    // Convolution Output Filter Selectors
+    // -------------------------------------------------------------------------
+    // CONV2_W_MAP_OPT and CONV3_W_MAP_OPT emit the 3456 weights for one output
+    // filter at a time. The future controller should step these selectors across
+    // 0..63 for Stage 2 and 0..127 for Stage 3.
+    input  logic [5:0]                    conv2_filter,
+    input  logic [6:0]                    conv3_filter,
 
     // -------------------------------------------------------------------------
     // Stage 1 Pixel Memory Bus
@@ -431,7 +437,7 @@ module deep_snn_top #(
     // Each array has 3456 entries: 384 conv9 units x 9 taps each.
     logic [PIXEL_W-1:0] stage1_weights [3456];   // 5x5 kernels, decomposed
     logic [PIXEL_W-1:0] stage2_weights [3456];   // 3x3 kernels, 32-channel
-    logic [PIXEL_W-1:0] stage3_weights [3456];   // 3x3 kernels, 64-channel [STUB]
+    logic [PIXEL_W-1:0] stage3_weights [3456];   // 3x3 kernels, 64-channel
 
     // active_weights: the weight ROM selected by src_sel MUX.
     // This feeds the weights_mapped unpacking below.
@@ -759,25 +765,25 @@ module deep_snn_top #(
     );
 
     // Stage 2 weights: 3x3 kernel, 32 input channels
-    // Source module: CONV2_W_MAP.sv
-    CONV2_W_MAP u_w2 (
+    // Source module: CONV2_W_MAP_OPT.sv
+    CONV2_W_MAP_OPT u_w2 (
+        .filter   (conv2_filter),
         .conv9_in (stage2_weights)
     );
 
     // Stage 3 weights: 3x3 kernel, 64 input channels
-    // TODO: CONV3_W_MAP_OPT module is not yet available.
-    //       Generate it after Stage 3 training is complete and weights are exported.
-    //       Uncomment the instantiation and the 2'b10 case in the MUX below.
-    //       Also initialise stage3_weights to zero for now to avoid X-propagation.
-    // CONV3_W_MAP_OPT u_w3 ( .conv9_in (stage3_weights) );
-    assign stage3_weights = '{default: '0};   // tie to zero until ROM is ready
+    // Source module: CONV3_W_MAP_OPT.sv
+    CONV3_W_MAP_OPT u_w3 (
+        .filter   (conv3_filter),
+        .conv9_in (stage3_weights)
+    );
 
     // src_sel MUX: select active weight ROM
     always_comb begin
         case (src_sel)
             2'b00:   active_weights = stage1_weights;   // Stage 1
             2'b01:   active_weights = stage2_weights;   // Stage 2
-            // 2'b10:   active_weights = stage3_weights; // Stage 3 (uncomment when ready)
+            2'b10:   active_weights = stage3_weights;   // Stage 3
             default: active_weights = stage2_weights;   // safe default
         endcase
     end
@@ -825,6 +831,7 @@ module deep_snn_top #(
                     .PROD_W  (36),        // 18x18 product width
                     .OUT_W   (MAC_OUT_W)  // 40-bit accumulator
                 ) u_conv (
+                    .CLK       (clk),
                     .P         (pixels_mapped[g][c]),   // 9 pixel taps
                     .Q         (weights_mapped[g][c]),  // 9 weight taps
                     .Pixel_Out (mac_raw[g][c])          // 40-bit MAC result

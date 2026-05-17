@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 // =============================================================================
 // adder_tree_10_4_1_1.v
-// 32-input adder tree using DSP48E1 primitives (Virtex-7, no locked IPs)
+// 32-input adder tree using Vivado-inferred DSP48E2 arithmetic
 //
 // Structure:
 //   Layer 1: 10 x adder_layer1  (3 inputs each ? 30 of 32 inputs)

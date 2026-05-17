@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 // =============================================================================
-// conv9.sv - 9-tap dot product using DSP48E1 cascade (Virtex-7)
+// conv9.sv - 9-tap dot product using Vivado-inferred DSP48E2 arithmetic
 //
-// DSP48E1 routing rules:
+// DSP cascade routing rules:
 //   PCOUT → PCIN of next DSP only  (cascade wire, cannot drive fabric)
 //   P     → fabric (LUTs, FFs, ports)
 //
