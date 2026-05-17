@@ -3,9 +3,10 @@
 // Date      : 5/13/26
 // File      : tb_fc2_layer.sv
 // Status    : finalized
-// Goal      : Self-checking testbench for fc2_layer.
+// Goal      : Self-checking testbench for fc2_layer (BRAM-pipelined).
 //             Applies 3 pre-computed input vectors, waits for done,
-//             compares all output logits against golden model.
+//             compares all 4 output logits against golden model.
+//             ~285 cycles per test case with BRAM pipeline.
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
@@ -898,6 +899,6 @@ module tb_fc2_layer;
         $finish;
     end
 
-    initial begin #(25.0 * 25000); $display("TIMEOUT"); $finish; end
+    initial begin #(25.0 * 50000); $display("TIMEOUT"); $finish; end
 
 endmodule
