@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Codex">
   <diagram id="deep_snn_top_simple" name="deep_snn_top_simple">
-    <mxGraphModel dx="2002" dy="1077" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1800" pageHeight="1050" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="3003" dy="1615" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1800" pageHeight="1050" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,7 +8,7 @@
           <mxGeometry height="50" width="760" x="500" y="20" as="geometry" />
         </mxCell>
         <mxCell id="top" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1f1f1f;strokeWidth=3;dashed=1;fontSize=18;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" value="deep_snn_top" vertex="1">
-          <mxGeometry height="780" width="1300" x="230" y="80" as="geometry" />
+          <mxGeometry height="780" width="1351" x="230" y="80" as="geometry" />
         </mxCell>
         <mxCell id="ctrl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" value="Controller signals&#xa;external now" vertex="1">
           <mxGeometry height="80" width="150" x="40" y="115" as="geometry" />
@@ -28,8 +28,8 @@
         <mxCell id="mem_mapping" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;" value="mem_mapping" vertex="1">
           <mxGeometry height="80" width="150" x="285" y="455" as="geometry" />
         </mxCell>
-        <mxCell id="frame_mapping" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;" value="frame_input_mapping&#xa;x32" vertex="1">
-          <mxGeometry height="80" width="170" x="490" y="455" as="geometry" />
+        <mxCell id="frame_mapping" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;frame_input_mapping&lt;br&gt;&lt;/font&gt;x32" vertex="1">
+          <mxGeometry height="80" width="170" x="508" y="455" as="geometry" />
         </mxCell>
         <mxCell id="pixel_mux" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=17;fontStyle=1;" value="pixel MUX&#xa;src_sel" vertex="1">
           <mxGeometry height="130" width="130" x="735" y="322" as="geometry" />
@@ -47,7 +47,7 @@
           <mxGeometry height="120" width="180" x="970" y="330" as="geometry" />
         </mxCell>
         <mxCell id="trunc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=17;fontStyle=1;" value="truncate" vertex="1">
-          <mxGeometry height="80" width="120" x="1210" y="350" as="geometry" />
+          <mxGeometry height="80" width="120" x="1233" y="350" as="geometry" />
         </mxCell>
         <mxCell id="adder" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=3;fontSize=18;fontStyle=1;" value="adder_tree_&#xa;shaaban_connect" vertex="1">
           <mxGeometry height="100" width="190" x="1070" y="560" as="geometry" />
@@ -56,30 +56,32 @@
           <mxGeometry height="105" width="160" x="1345" y="555" as="geometry" />
         </mxCell>
         <mxCell id="spike_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=19;fontStyle=1;" value="spike_out" vertex="1">
-          <mxGeometry height="70" width="140" x="1605" y="575" as="geometry" />
+          <mxGeometry height="70" width="140" x="1665" y="575" as="geometry" />
         </mxCell>
         <mxCell id="writeback" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=18;fontStyle=1;" value="mem_maping_1_2" vertex="1">
-          <mxGeometry height="80" width="160" x="1345" y="730" as="geometry" />
+          <mxGeometry height="80" width="160" x="1390" y="763" as="geometry" />
         </mxCell>
         <mxCell id="bram_todo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=18;fontStyle=1;" value="spike BRAM&#xa;TODO" vertex="1">
-          <mxGeometry height="80" width="140" x="1600" y="730" as="geometry" />
+          <mxGeometry height="80" width="140" x="1655" y="763" as="geometry" />
         </mxCell>
         <mxCell id="future_fc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=17;fontStyle=1;" value="larger wrapper later&#xa;GAP / FC1 / FC2" vertex="1">
-          <mxGeometry height="90" width="160" x="1590" y="330" as="geometry" />
+          <mxGeometry height="90" width="160" x="1655" y="330" as="geometry" />
         </mxCell>
-        <mxCell id="legend" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;fontSize=15;" value="Dashed blocks are not implemented inside top.sv" vertex="1">
+        <mxCell id="legend" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;fontSize=15;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Dashed blocks are not implemented inside top.sv&lt;/font&gt;&lt;/b&gt;" vertex="1">
           <mxGeometry height="30" width="420" x="250" y="880" as="geometry" />
         </mxCell>
-        <mxCell id="e_pixel_stage1" edge="1" parent="1" source="pixel_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="stage1in" value="pixel_mem">
+        <mxCell id="e_pixel_stage1" edge="1" parent="1" source="pixel_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="stage1in" value="&lt;b&gt;pixel_mem&lt;/b&gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_stage1_mux" edge="1" parent="1" source="stage1in" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="pixel_mux" value="pixels_s1">
+          <mxGeometry relative="1" x="-0.1626" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_spike_mem_map" edge="1" parent="1" source="spike_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="mem_mapping" value="&lt;b&gt;spike_mem&lt;/b&gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_spike_mem_map" edge="1" parent="1" source="spike_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="mem_mapping" value="spike_mem">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e_mem_frame" edge="1" parent="1" source="mem_mapping" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="frame_mapping" value="fil_in">
+        <mxCell id="e_mem_frame" edge="1" parent="1" source="mem_mapping" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="frame_mapping" value="&lt;b&gt;fil_in&lt;/b&gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_frame_mux" edge="1" parent="1" source="frame_mapping" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="pixel_mux" value="pixels_s2">
@@ -88,9 +90,11 @@
         <mxCell id="e_mux_conv" edge="1" parent="1" source="pixel_mux" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="conv9" value="pixels_mapped">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_rom_wmux" edge="1" parent="1" source="w_rom" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="w_mux" value="weights">
+        <mxCell id="e_rom_wmux" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" value="weights">
           <mxGeometry relative="1" x="0.1667" y="10" as="geometry">
             <mxPoint as="offset" />
+            <mxPoint x="495" y="670" as="sourcePoint" />
+            <mxPoint x="555" y="670" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="e_wmux_unpack" edge="1" parent="1" source="w_mux" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="w_unpack" value="active_weights">
@@ -98,11 +102,13 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_unpack_conv" edge="1" parent="1" source="w_unpack" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="conv9" value="weights_mapped">
+        <mxCell id="e_unpack_conv" edge="1" parent="1" source="w_unpack" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;entryX=0.346;entryY=0.994;entryDx=0;entryDy=0;entryPerimeter=0;" target="conv9" value="weights_mapped">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1040" y="670" />
+              <mxPoint x="1018" y="665" />
+              <mxPoint x="1031" y="463" />
             </Array>
+            <mxPoint x="1033" y="453" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="e_conv_trunc" edge="1" parent="1" source="conv9" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="trunc" value="mac_raw">
@@ -111,35 +117,45 @@
         <mxCell id="e_trunc_adder" edge="1" parent="1" source="trunc" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="adder" value="mac_to_connect">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1270" y="500" />
+              <mxPoint x="1290" y="500" />
               <mxPoint x="1165" y="500" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e_adder_shaaban" edge="1" parent="1" source="adder" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="shaaban" value="shb_bus">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" x="-0.0797" y="12" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e_params_shaaban" edge="1" parent="1" source="params" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="shaaban" value="params">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="e_params_shaaban" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;params&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.7658" as="geometry">
+            <mxPoint as="offset" />
             <Array as="points">
-              <mxPoint x="200" y="740" />
-              <mxPoint x="1425" y="740" />
+              <mxPoint x="165" y="740" />
+              <mxPoint x="1390" y="740" />
             </Array>
+            <mxPoint x="155" y="740" as="sourcePoint" />
+            <mxPoint x="1390" y="660" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="e_shaaban_spike" edge="1" parent="1" source="shaaban" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="spike_out" value="spike_out">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_shaaban_writeback" edge="1" parent="1" source="shaaban" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="writeback" value="shaaban_spike_bus">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="e_shaaban_writeback" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;entryX=0.21;entryY=0.013;entryDx=0;entryDy=0;entryPerimeter=0;" value="shaaban_spike_bus">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1432.9304714449981" y="658.96" as="sourcePoint" />
+            <mxPoint x="1432" y="763" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e_writeback_bram" edge="1" parent="1" source="writeback" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="bram_todo" value="mem_mapped_internal">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="e_writeback_bram" edge="1" parent="1" source="writeback" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="bram_todo" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;mem_mapped_internal&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.2678" y="-10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e_bram_loop" edge="1" parent="1" source="bram_todo" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="spike_mem" value="readback">
+        <mxCell id="e_bram_loop" edge="1" parent="1" source="bram_todo" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="spike_mem" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;readback&lt;/font&gt;">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1670" y="920" />
+              <mxPoint x="1726" y="920" />
               <mxPoint x="20" y="920" />
               <mxPoint x="20" y="515" />
             </Array>
@@ -148,39 +164,47 @@
         <mxCell id="e_spike_future" edge="1" parent="1" source="spike_out" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="future_fc" value="later">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_ctrl_pixmux" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="pixel_mux" value="src_sel">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="e_ctrl_pixmux" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="pixel_mux" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;src_sel&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.74" as="geometry">
+            <mxPoint as="offset" />
             <Array as="points">
               <mxPoint x="800" y="155" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_wmux" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="w_mux" value="src_sel / filters">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="e_ctrl_wmux" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="w_mux" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;src_sel&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.9341" y="3" as="geometry">
+            <mxPoint as="offset" />
             <Array as="points">
               <mxPoint x="620" y="155" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_frame" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="mem_mapping" value="frame">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="e_ctrl_frame" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="mem_mapping" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;frame&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.7447" as="geometry">
+            <mxPoint y="-1" as="offset" />
             <Array as="points">
               <mxPoint x="360" y="155" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_adder" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="adder" value="src_sel">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="e_ctrl_writeback" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;entryX=0.573;entryY=0.016;entryDx=0;entryDy=0;entryPerimeter=0;" target="writeback" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;stage_sel&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.9723" y="-2" as="geometry">
+            <mxPoint as="offset" />
             <Array as="points">
-              <mxPoint x="1165" y="155" />
+              <mxPoint x="1482" y="154" />
             </Array>
+            <mxPoint x="1476" y="756" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_writeback" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="writeback" value="stage_sel">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="B2csj1XMGzRoNsEugffg-1" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;conv2_filter / conv3_filter&amp;nbsp;&amp;nbsp;&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.3741" y="17" as="geometry">
+            <mxPoint as="offset" />
             <Array as="points">
-              <mxPoint x="1425" y="155" />
+              <mxPoint x="392" y="555" />
             </Array>
+            <mxPoint x="620" y="555" as="sourcePoint" />
+            <mxPoint x="392" y="621" as="targetPoint" />
           </mxGeometry>
         </mxCell>
       </root>
