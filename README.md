@@ -304,26 +304,9 @@ The **conv9** unit (`rtl/convolution_blocks/cov9.sv`) is the fundamental computa
 
 **Internal structure:**
 
-```
-  P[0]──[×]──m[0]──┐
-  Q[0]              │
-  P[1]──[×]──m[1]──┤  s1_0 = m[0]+m[1] ─┐
-  Q[1]              │                     │
-  P[2]──[×]──m[2]──┘  s1_1 = m[2]+m[3] ─┤  s2_0 = s1_0+s1_1 ─┐
-  Q[2]                                    │                      │
-  P[3]──[×]──m[3]──────────────────────── ┘  s2_1 = s1_2+s1_3 ─┤  s3 = s2_0+s2_1 ─┐
-  Q[3]                                                           │                   │
-  P[4]──[×]──m[4]──┐  s1_2 = m[4]+m[5] ────────────────────── ┘                   │
-  Q[4]              │                                                                 ├──► Pixel_Out = s3 + m[8]
-  P[5]──[×]──m[5]──┘                                                                 │    (40-bit result)
-  Q[5]                                                                                │
-  P[6]──[×]──m[6]──┐  s1_3 = m[6]+m[7] ──────────────────────────────────────────── ┘
-  Q[6]              │
-  P[7]──[×]──m[7]──┘
-  Q[7]
-  P[8]──[×]──m[8]──────────────────────────────────────────────────────────────────►(added last)
-  Q[8]
-```
+<div align="center">
+  <img width="1200" alt="conv9 cascaded DSP48E2 MAC chain" src="./Schematics/Convolution/conv9.png" />
+</div>
 
 | Port | Width | Description |
 |------|:-----:|-------------|
@@ -331,10 +314,10 @@ The **conv9** unit (`rtl/convolution_blocks/cov9.sv`) is the fundamental computa
 | `Q[0:8]` | 18-bit signed | Filter weight vector |
 | `Pixel_Out[39:0]` | 40-bit | Accumulated dot product |
 
-**Structure:** 9 parallel multipliers → 4-level binary adder tree → 40-bit sum  
+**Structure:** 9 cascaded DSP48E2 MACs → 40-bit sum  
 **Critical path:** 9 DSP delays (1 per multiplier in the cascade)
 
-Although `conv9` uses a standard binary adder tree internally, its output feeds into the **adder tree's Layer-1 3-input adders**, where the DSP48E2 pre-adder achieves the 3-to-1 grouping efficiently.
+The `conv9` output feeds into the **adder tree's Layer-1 3-input adders**, where the DSP48E2 pre-adder achieves the 3-to-1 grouping efficiently.
 
 ---
 
