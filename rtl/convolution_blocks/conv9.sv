@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 // =============================================================================
-// conv9.sv - 9-tap dot product using Vivado-inferred DSP48E2 arithmetic
+// conv9.sv - 9-tap dot product using explicit cascaded DSP48E2 primitives
 //
 // DSP cascade routing rules:
 //   PCOUT → PCIN of next DSP only  (cascade wire, cannot drive fabric)
