@@ -19,7 +19,7 @@
 //  ├──────────┼─────────┼──────────────────────────────────────────────────┤
 //  │  2'b00   │    1    │ 128 conv25 outputs → all 32 Shaabans (4 each)    │
 //  │  2'b01   │    2    │ 12 tree finals → Shaabans 0,1,2 only (4 each)    │
-//  │  2'b10   │    3    │ 1 accumulated sum → Shaaban 0 slot 0 only        │
+//  │  2'b10   │    3    │ 4 accumulated sums → Shaaban 0 slots 0..3       │
 //  └──────────┴─────────┴──────────────────────────────────────────────────┘
 //
 // STAGE 1 ASSEMBLY — WHY 120 TAPS ARE NOT ENOUGH
@@ -66,7 +66,7 @@ module adder_tree_shaaban_connect #(
     // =========================================================================
     logic signed [DATA_WIDTH-1:0] tree_tap   [0:N_TREES-1][0:TAPS_PER_TREE-1];
     logic signed [DATA_WIDTH-1:0] tree_final [0:N_TREES-1];
-    logic signed [DATA_WIDTH-1:0] s3_results [0:5];
+    logic signed [DATA_WIDTH-1:0] s3_results [0:3];
 
     genvar t, i;
     generate
@@ -94,8 +94,8 @@ module adder_tree_shaaban_connect #(
             );
         end
         
-        // Stage 3 Pairwise Summation
-        for (i = 0; i < 6; i++) begin : gen_s3_sums
+        // Stage 3 Pairwise Summation: four 64-channel 3x3 window sums.
+        for (i = 0; i < 4; i++) begin : gen_s3_sums
             assign s3_results[i] = tree_final[2*i] + tree_final[2*i+1];
         end
     endgenerate
@@ -173,9 +173,9 @@ module adder_tree_shaaban_connect #(
                 else 
                     assign src_s2[p*DATA_WIDTH +: DATA_WIDTH] = '0;
 
-                // Stage 3: Pairwise Sums
-                if (s < 2 && (s * INPUTS_PER_SHB + p) < 6)
-                    assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = s3_results[s * INPUTS_PER_SHB + p];
+                // Stage 3: four pairwise sums feed Shaaban 0 only.
+                if (s == 0)
+                    assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = s3_results[p];
                 else
                     assign src_s3[p*DATA_WIDTH +: DATA_WIDTH] = '0;
             end

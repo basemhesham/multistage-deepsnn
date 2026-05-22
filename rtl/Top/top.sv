@@ -73,7 +73,7 @@
 //  +---------------------------------------------------------------------------+
 //
 //  +---------------------------------------------------------------------------+
-//  | PATH B: STAGE 2/3 INPUT                                                   |
+//  | PATH B: STAGE 2 INPUT                                                     |
 //  | Source: Spike output BRAM (1-bit spikes written by Stage 1 writeback)     |
 //  |                                                                           |
 //  |  spike_mem[3199:0]   -- 3200 x 1-bit spike values                        |
@@ -95,11 +95,25 @@
 //  +---------------------------------------------------------------------------+
 //
 //  +---------------------------------------------------------------------------+
+//  | PATH C: STAGE 3 INPUT                                                     |
+//  | Source: Stage 2 spike writeback layout                                    |
+//  |                                                                           |
+//  |  spike_mem[1023:0]   -- 64 channels x 16 positions = 4x4x64              |
+//  |       |                                                                   |
+//  |       v  (C1: bin_muxing_stage2)                                         |
+//  |  stage3_windows[9][4][64] -- 9 taps x 4 windows x 64 channels           |
+//  |       |                                                                   |
+//  |       v  (C2: split 64 channels into adjacent 32-channel row pairs)      |
+//  |  pixels_s3[12][32][9]  -- rows 0..7 active, rows 8..11 zero             |
+//  +---------------------------------------------------------------------------+
+//
+//  +---------------------------------------------------------------------------+
 //  | SHARED HARDWARE (both paths feed into this)                               |
 //  |                                                                           |
 //  |  src_sel MUX                                                              |
 //  |  pixels_mapped[12][32][9]  <-- pixels_s1 when src_sel=2'b00 (Stage 1)   |
-//  |                             <-- pixels_s2 when src_sel=2'b01/10 (S2/S3)  |
+//  |                             <-- pixels_s2 when src_sel=2'b01 (Stage 2)   |
+//  |                             <-- pixels_s3 when src_sel=2'b10 (Stage 3)   |
 //  |       |                                                                   |
 //  |       |   Weight ROMs (distributed LUTs, always readable, zero latency)  |
 //  |       |   CONV1_W_MAP_OPT --> stage1_weights[3456]                       |
@@ -132,7 +146,7 @@
 //  |    - 3-way src_sel MUX:                                                   |
 //  |        2'b00: shb_bus[s] = flat_s1[s*4 .. s*4+3]  (Stage 1, all 32)    |
 //  |        2'b01: shb_bus[0,1,2] = tree finals; shb_bus[3..31] = 0          |
-//  |        2'b10: shb_bus[0] slot0 = final_s3; rest = 0                      |
+//  |        2'b10: shb_bus[0] = four Stage 3 64-channel sums; rest = 0        |
 //  |       |                                                                   |
 //  |       v                                                                   |
 //  |  shb_bus[32]  -- each entry is 4 packed 18-bit values                   |
@@ -170,7 +184,8 @@
 //   COMPLETE:
 //   [x] Stage 1 input path (Stage1_in shift-mapping from pixel BRAM)
 //   [x] Stage 2 input path (mem_mapping + frame_input_mapping)
-//   [x] src_sel pixel MUX (switches between Stage 1 and Stage 2/3 pixel inputs)
+//   [x] Stage 3 input path (bin_muxing_stage2 from Stage 2 writeback layout)
+//   [x] src_sel pixel MUX (switches between Stage 1, Stage 2, and Stage 3)
 //   [x] Stage 1 weight ROM (CONV1_W_MAP_OPT)
 //   [x] Stage 2 weight ROM (CONV2_W_MAP_OPT)
 //   [x] Stage 3 weight ROM (CONV3_W_MAP_OPT)
@@ -274,8 +289,7 @@ module deep_snn_top #(
     // Stage 1 input path (Stage1_in) reads all pixels directly and does not
     // use frame -- it does not implement a sliding window.
     // The controller cycles frame 1->2->3->4->5->6 during Stage 2/3 operation.
-    // TODO: connect to controller when ready.
-    input  logic [FRAME_NO_WIDTH-1:0]     frame,
+    output logic [FRAME_NO_WIDTH-1:0]     frame,
 
     // -------------------------------------------------------------------------
     // Convolution Output Filter Selectors
@@ -307,12 +321,15 @@ module deep_snn_top #(
     // 3200-bit flat bus (3200 x 1-bit spike values).
     // Carries binary spike outputs from Stage 1, written to memory by
     // mem_maping_1_2 at the end of Stage 1 processing.
-    // Used ONLY during Stage 2/3 (src_sel=2'b01 or 2'b10).
+    // Used during Stage 2/3 (src_sel=2'b01 or 2'b10).
     // It is NOT connected to pixel_mem -- they are two separate BRAMs.
     //
     // Why 3200 bits? Stage 1 produces 32 Shaabans x 100 spatial positions = 3200
     // spike values, packed 1-bit each into a flat 3200-bit word.
     // The mem_mapping module reads specific bits of this bus based on frame.
+    // During Stage 3, the first 1024 bits carry the Stage 2 writeback layout:
+    // 64 channels x 16 positions = 4x4x64. bin_muxing_stage2 converts that
+    // compact layout into four 3x3 windows for the Stage 3 conv path.
     //
     // TODO: When BRAM is instantiated, connect the BRAM read data port here.
     // The same BRAM that mem_maping_1_2 writes must be read here for Stage 2.
@@ -412,17 +429,32 @@ module deep_snn_top #(
     // Represents 12 overlapping 3x3 windows per filter for all 32 filters.
     logic conv_windows [31:0][11:0][8:0];
 
-    // pixels_s2: Stage 2/3 pixel input array after sign-extension.
+    // pixels_s2: Stage 2 pixel input array after sign-extension.
     // Shape [12][32][9], same as pixels_s1 but sourced from conv_windows.
     // 1-bit spikes sign-extended to 18-bit: 0 --> 18'h00000, 1 --> 18'h3FFFF.
     logic signed [PIXEL_W-1:0] pixels_s2 [0:11][0:31][0:8];
+
+    // stage3_mem: unpacked view of the first 1024 spike_mem bits.
+    // Stage 2 writeback stores a 4x4 map for each of 64 channels:
+    //   stage3_mem[channel*16 + spatial_index].
+    logic stage3_mem [0:1023];
+
+    // stage3_windows: output of bin_muxing_stage2.
+    // Shape [tap][window][channel] = 9 x 4 x 64.
+    // The four windows are the four 3x3 conv windows inside the 4x4 Stage 3 input.
+    logic stage3_windows [0:8][0:3][0:63];
+
+    // pixels_s3: Stage 3 pixel input array after sign-extension.
+    // Rows 0/1, 2/3, 4/5, 6/7 hold the four Stage 3 windows split across
+    // channels 0..31 and 32..63. Rows 8..11 are tied to zero.
+    logic signed [PIXEL_W-1:0] pixels_s3 [0:11][0:31][0:8];
 
     // -------------------------------------------------------------------------
     // SHARED: Active pixel array (MUX output, feeds conv9 array)
     // -------------------------------------------------------------------------
 
     // pixels_mapped: the actual pixel inputs seen by the conv9 array.
-    // src_sel MUX chooses between pixels_s1 (Stage 1) and pixels_s2 (Stage 2/3).
+    // src_sel MUX chooses between pixels_s1, pixels_s2, and pixels_s3.
     // Shape [12 blocks][32 filters][9 taps].
     logic signed [PIXEL_W-1:0] pixels_mapped [0:11][0:31][0:8];
 
@@ -489,6 +521,23 @@ module deep_snn_top #(
     // This is INTERNAL and does NOT appear as a top-level port (would need 102,400 pins).
     // TODO: Connect to BRAM write data port when BRAM is instantiated below.
     logic [0:31] mem_mapped_internal [0:3199];
+
+    localparam logic [FRAME_NO_WIDTH-1:0] FRAME_FIRST = 1;
+    localparam logic [FRAME_NO_WIDTH-1:0] FRAME_LAST  = FRAME_NO;
+
+    always_ff @(posedge clk or negedge arst_n) begin
+        if (!arst_n) begin
+            frame <= FRAME_FIRST;
+        end else if (rst) begin
+            frame <= FRAME_FIRST;
+        end else if (!enable) begin
+            frame <= frame;
+        end else if ((src_sel == 2'b01) || (src_sel == 2'b10)) begin
+            frame <= (frame >= FRAME_LAST) ? FRAME_FIRST : (frame + 1'b1);
+        end else begin
+            frame <= FRAME_FIRST;
+        end
+    end
 
     // =========================================================================
     // PATH A: STAGE 1 INPUT PIPELINE
@@ -626,10 +675,10 @@ module deep_snn_top #(
     // =========================================================================
 
     // -------------------------------------------------------------------------
-    // B1: mem_mapping (frame_mapping_iterations_filters.sv)
+    // B1: Stage 2 mem_mapping (frame_mapping_iterations_filters.sv)
     // -------------------------------------------------------------------------
     // This module reads specific bits from the 3200-bit spike_mem bus and
-    // routes them into the fil_in[32][40] output array.
+    // routes them into the fil_in[32][40] output array for Stage 2.
     //
     // WHY THIS IS NEEDED:
     //   Stage 2 processes 32 input channels with 12 parallel conv engines.
@@ -654,7 +703,7 @@ module deep_snn_top #(
         .clk    (clk),
         .arst_n (arst_n),
         .frame  (frame),
-        .mem    (spike_mem),   // IMPORTANT: Stage 2/3 spike bus, NOT pixel_mem
+        .mem    (spike_mem),   // IMPORTANT: Stage 2 spike bus, NOT pixel_mem
         .fil_in (fil_in)
     );
 
@@ -709,6 +758,61 @@ module deep_snn_top #(
         end
     endgenerate
 
+    // -------------------------------------------------------------------------
+    // B4: Stage 3 bin muxing from Stage 2 writeback layout
+    // -------------------------------------------------------------------------
+    // Stage 2 produces a compact 4x4 map for each of 64 channels:
+    //   64 channels x 16 spatial positions = 1024 bits.
+    //
+    // bin_muxing_stage2 carves each 4x4 channel map into the four 3x3 windows
+    // needed by Stage 3 convolution:
+    //   window 0: top-left     window 1: top-right
+    //   window 2: bottom-left  window 3: bottom-right
+    //
+    // These four windows are mapped into the shared 12x32 conv array as
+    // adjacent row pairs. The existing adder_tree_shaaban_connect Stage 3 path
+    // pairwise-adds tree_final[0]+[1], [2]+[3], [4]+[5], and [6]+[7], giving
+    // four full 64-channel conv sums for Shaaban unit 0's 2x2 max-pool input.
+    genvar sm;
+    generate
+        for (sm = 0; sm < 1024; sm++) begin : gen_stage3_mem_unpack
+            assign stage3_mem[sm] = spike_mem[sm];
+        end
+    endgenerate
+
+    bin_muxing_stage2 u_stage3_bin_mux (
+        .din  (stage3_mem),
+        .dout (stage3_windows)
+    );
+
+    genvar win3, ch3, tap3;
+    generate
+        for (win3 = 0; win3 < 4; win3++) begin : gen_ps3_window
+            for (ch3 = 0; ch3 < 32; ch3++) begin : gen_ps3_channel
+                for (tap3 = 0; tap3 < 9; tap3++) begin : gen_ps3_tap
+                    assign pixels_s3[(win3 * 2)    ][ch3][tap3] =
+                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3]}},
+                                      stage3_windows[tap3][win3][ch3]};
+
+                    assign pixels_s3[(win3 * 2) + 1][ch3][tap3] =
+                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3 + 32]}},
+                                      stage3_windows[tap3][win3][ch3 + 32]};
+                end
+            end
+        end
+    endgenerate
+
+    genvar zrow3, zch3, ztap3;
+    generate
+        for (zrow3 = 8; zrow3 < 12; zrow3++) begin : gen_ps3_zero_row
+            for (zch3 = 0; zch3 < 32; zch3++) begin : gen_ps3_zero_channel
+                for (ztap3 = 0; ztap3 < 9; ztap3++) begin : gen_ps3_zero_tap
+                    assign pixels_s3[zrow3][zch3][ztap3] = '0;
+                end
+            end
+        end
+    endgenerate
+
     // =========================================================================
     // SHARED: src_sel PIXEL MUX
     // =========================================================================
@@ -716,10 +820,10 @@ module deep_snn_top #(
     // This is a pure combinational 2-to-1 MUX replicated across all 12x32x9
     // pixel positions. Zero additional pipeline delay is introduced.
     //
-    // Why Stage 3 uses the same path as Stage 2:
-    //   Stage 3 also reads from the spike BRAM (Stage 2 spike outputs) using
-    //   the same mem_mapping + frame_input_mapping pipeline. The only difference
-    //   is the weight ROM selected and the number of active Shaaban units.
+    // Stage-specific paths:
+    //   Stage 1 reads raw pixel data.
+    //   Stage 2 reads the 3200-bit Stage 1 writeback layout through frame logic.
+    //   Stage 3 reads the 1024-bit Stage 2 writeback layout through bin_muxing_stage2.
     genvar gm, cm, tm;
     generate
         for (gm = 0; gm < 12; gm++) begin : gen_pmux_row
@@ -729,7 +833,7 @@ module deep_snn_top #(
                         case (src_sel)
                             2'b00:   pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];  // Stage 1
                             2'b01:   pixels_mapped[gm][cm][tm] = pixels_s2[gm][cm][tm];  // Stage 2
-                            2'b10:   pixels_mapped[gm][cm][tm] = pixels_s2[gm][cm][tm];  // Stage 3
+                            2'b10:   pixels_mapped[gm][cm][tm] = pixels_s3[gm][cm][tm];  // Stage 3
                             default: pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];
                         endcase
                     end
@@ -905,8 +1009,9 @@ module deep_snn_top #(
     //                       shb_bus[2] = {tree_final[8..11]}
     //                       shb_bus[3..31] = 0 (inactive)
     //                       Only 3 Shaabans receive valid data.
-    //        2'b10 Stage 3: shb_bus[0] slot0 = final_s3 (64-ch pre-accumulated sum)
-    //                       All other slots = 0. Only 1 Shaaban receives valid data.
+    //        2'b10 Stage 3: shb_bus[0] = {s3_results[0..3]}
+    //                       Each s3_result is one 64-channel accumulated window.
+    //                       All other units are zero. Only 1 Shaaban receives valid data.
     //
     // KEY POINT: The adder tree hardware itself does not change between stages.
     // The same 12 trees always compute all their outputs (taps AND final sum)
