@@ -151,6 +151,7 @@ Inputs:
 ```text
 pixels_s1[12][32][9]
 pixels_s2[12][32][9]
+pixels_s3[12][32][9]
 src_sel
 ```
 
@@ -166,9 +167,46 @@ Function: choose which pixel/spike input path feeds the shared `conv9` array.
 |---|---|---|
 | `2'b00` | `pixels_s1` | Stage 1 |
 | `2'b01` | `pixels_s2` | Stage 2 |
-| `2'b10` | `pixels_s2` | Stage 3 |
+| `2'b10` | `pixels_s3` | Stage 3 |
 
 This is a replicated MUX over all `12 x 32 x 9 = 3456` input positions.
+
+### Stage 3 Input Bin Mux
+
+Status: implemented.
+
+RTL: [`rtl/frame/bin_muxing_stage2.sv`](../../rtl/frame/bin_muxing_stage2.sv)
+
+Stage 3 consumes the compact Stage 2 writeback layout:
+
+```text
+spike_mem[1023:0] -> stage3_mem[1024]
+```
+
+This is interpreted as:
+
+```text
+64 channels x 16 spatial positions = 4x4x64
+```
+
+`bin_muxing_stage2` maps each 4x4 channel map into four 3x3 windows:
+
+```text
+stage3_windows[9 taps][4 windows][64 channels]
+```
+
+`top.sv` then splits the 64 channels into adjacent 32-channel row pairs:
+
+```text
+window 0: pixels_s3[0] = channels 0..31,  pixels_s3[1] = channels 32..63
+window 1: pixels_s3[2] = channels 0..31,  pixels_s3[3] = channels 32..63
+window 2: pixels_s3[4] = channels 0..31,  pixels_s3[5] = channels 32..63
+window 3: pixels_s3[6] = channels 0..31,  pixels_s3[7] = channels 32..63
+```
+
+Rows `8..11` are tied to zero. The adder connection layer pairwise-adds rows
+`0+1`, `2+3`, `4+5`, and `6+7`, producing the four Stage 3 convolution results
+that feed Shaaban unit 0's 2x2 max-pool input.
 
 ### Convolution Weight Maps
 
@@ -491,4 +529,3 @@ These blocks are not fully implemented/connected in `deep_snn_top` yet:
 | Classifier wrapper | Connect `spike_out`/GAP output to FC1 and FC2 |
 | FC integration | Instantiate existing `fc1_layer` and `fc2_layer` in the larger wrapper |
 | Final class output interface | Provide class logits or argmax result to the system |
-
