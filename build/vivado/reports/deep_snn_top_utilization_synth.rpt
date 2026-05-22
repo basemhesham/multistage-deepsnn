@@ -1,13 +1,13 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
--------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.2 (win64) Build 2258646 Thu Jun 14 20:03:12 MDT 2018
-| Date         : Sun May 17 22:59:34 2026
+| Date         : Fri May 22 14:56:38 2026
 | Host         : Basem-Hesham running 64-bit major release  (build 9200)
-| Command      : report_utilization -file deep_snn_top_utilization_synth.rpt -pb deep_snn_top_utilization_synth.pb
+| Command      : report_utilization -file C:/Users/PC/Desktop/STM/Repo/MultiStage-DeepSNN/build/vivado/reports/deep_snn_top_utilization_synth.rpt
 | Design       : deep_snn_top
 | Device       : xcvu11pflga2577-3
 | Design State : Synthesized
--------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------
 
 Utilization Design Information
 
@@ -35,14 +35,14 @@ Table of Contents
 +-------------------------+-------+-------+-----------+-------+
 |        Site Type        |  Used | Fixed | Available | Util% |
 +-------------------------+-------+-------+-----------+-------+
-| CLB LUTs*               | 76358 |     0 |   1296000 |  5.89 |
-|   LUT as Logic          | 76358 |     0 |   1296000 |  5.89 |
+| CLB LUTs*               | 92109 |     0 |   1296000 |  7.11 |
+|   LUT as Logic          | 92109 |     0 |   1296000 |  7.11 |
 |   LUT as Memory         |     0 |     0 |    593280 |  0.00 |
-| CLB Registers           |   576 |     0 |   2592000 |  0.02 |
-|   Register as Flip Flop |   576 |     0 |   2592000 |  0.02 |
+| CLB Registers           |   660 |     0 |   2592000 |  0.03 |
+|   Register as Flip Flop |   660 |     0 |   2592000 |  0.03 |
 |   Register as Latch     |     0 |     0 |   2592000 |  0.00 |
-| CARRY8                  |   850 |     0 |    162000 |  0.52 |
-| F7 Muxes                |  4792 |     0 |    648000 |  0.74 |
+| CARRY8                  |   844 |     0 |    162000 |  0.52 |
+| F7 Muxes                |  4800 |     0 |    648000 |  0.74 |
 | F8 Muxes                |     0 |     0 |    324000 |  0.00 |
 | F9 Muxes                |     0 |     0 |    162000 |  0.00 |
 +-------------------------+-------+-------+-----------+-------+
@@ -61,8 +61,8 @@ Table of Contents
 | 0     |            _ |         Set |            - |
 | 0     |            _ |       Reset |            - |
 | 0     |          Yes |           - |            - |
-| 0     |          Yes |           - |          Set |
-| 576   |          Yes |           - |        Reset |
+| 33    |          Yes |           - |          Set |
+| 627   |          Yes |           - |        Reset |
 | 0     |          Yes |         Set |            - |
 | 0     |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
@@ -88,8 +88,8 @@ Table of Contents
 +----------------+------+-------+-----------+-------+
 |    Site Type   | Used | Fixed | Available | Util% |
 +----------------+------+-------+-----------+-------+
-| DSPs           | 3972 |     0 |      9216 | 43.10 |
-|   DSP48E2 only | 3972 |       |           |       |
+| DSPs           | 3784 |     0 |      9216 | 41.06 |
+|   DSP48E2 only | 3784 |       |           |       |
 +----------------+------+-------+-----------+-------+
 
 
@@ -99,7 +99,7 @@ Table of Contents
 +------------+-------+-------+-----------+---------+
 |  Site Type |  Used | Fixed | Available |  Util%  |
 +------------+-------+-------+-----------+---------+
-| Bonded IOB | 10178 |     0 |       448 | 2271.88 |
+| Bonded IOB | 10184 |     0 |       448 | 2273.21 |
 +------------+-------+-------+-----------+---------+
 
 
@@ -162,19 +162,20 @@ Table of Contents
 +----------+-------+---------------------+
 | Ref Name |  Used | Functional Category |
 +----------+-------+---------------------+
-| LUT4     | 55722 |                 CLB |
-| LUT6     | 19749 |                 CLB |
-| LUT3     | 16156 |                 CLB |
-| LUT5     | 12361 |                 CLB |
-| INBUF    | 10146 |                 I/O |
-| IBUFCTRL | 10146 |              Others |
-| MUXF7    |  4792 |                 CLB |
-| LUT2     |  4747 |                 CLB |
-| DSP48E2  |  3972 |          Arithmetic |
-| CARRY8   |   850 |                 CLB |
-| FDCE     |   576 |            Register |
-| LUT1     |   484 |                 CLB |
-| OBUF     |    32 |                 I/O |
+| LUT5     | 43257 |                 CLB |
+| LUT4     | 35555 |                 CLB |
+| LUT6     | 19792 |                 CLB |
+| INBUF    | 10149 |                 I/O |
+| IBUFCTRL | 10149 |              Others |
+| LUT3     |  6857 |                 CLB |
+| MUXF7    |  4800 |                 CLB |
+| LUT2     |  4193 |                 CLB |
+| DSP48E2  |  3784 |          Arithmetic |
+| CARRY8   |   844 |                 CLB |
+| FDCE     |   627 |            Register |
+| LUT1     |   485 |                 CLB |
+| OBUF     |    35 |                 I/O |
+| FDPE     |    33 |            Register |
 | BUFGCE   |     1 |               Clock |
 +----------+-------+---------------------+
 
