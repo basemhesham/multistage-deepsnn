@@ -194,21 +194,13 @@
 //   [x] adder_tree_shaaban_connect (summation + stage routing)
 //   [x] 32 Shaaban units (always instantiated, inactive ones get zero)
 //   [x] mem_maping_1_2 write-back converter
+//   [x] top_controller control FSM
 //
 //   INCOMPLETE / TODO:
 //   [ ] BRAM instantiation -- mem_mapped_internal currently goes nowhere.
 //       Needs: Instantiate a BRAM primitive (RAMB36E2 or UltraRAM) here.
 //       Connect: mem_mapped_internal --> BRAM write data port.
-//       Also needs: write address counter and write enable from controller.
-//
-//   [ ] Controller module -- src_sel, frame, stage_sel, arst_n, enable are all
-//       driven externally (from testbench or manual assignment) right now.
-//       The controller must sequence:
-//         1. Assert src_sel=2'b00, cycle frame 1->6 for Stage 1 (100 cycles)
-//         2. Assert write enable to store spike_out to spike BRAM
-//         3. Assert src_sel=2'b01, cycle frame 1->6 for Stage 2
-//         4. Assert src_sel=2'b10 for Stage 3
-//         5. Drive spike_out to classifier head (GAP -> FC1 -> FC2)
+//       Connect the controller BRAM enables/address outputs to the memory.
 //
 //   [ ] Classifier head (GAP, FC1, FC2) -- not instantiated here yet.
 //       After Stage 3 produces spikes, they feed into:
@@ -270,35 +262,6 @@ module deep_snn_top #(
     input  wire                           arst_n,   // Async active-low reset
     //                                              // (used by mem_mapping module)
     input  wire                           enable,   // Global enable
-    //                                              // TODO: connect to controller
-
-    // -------------------------------------------------------------------------
-    // Stage Selector
-    // -------------------------------------------------------------------------
-    // Drives three simultaneous MUXes: pixel source, weight ROM, adder routing.
-    //   2'b00 --> Stage 1: pixel_mem path, stage1_weights, all 32 Shaabans fed
-    //   2'b01 --> Stage 2: spike_mem path, stage2_weights, Shaabans 0,1,2 fed
-    //   2'b10 --> Stage 3: spike_mem path, stage3_weights, Shaaban 0 only fed
-    // TODO: connect to controller when ready.
-    input  logic [1:0]                    src_sel,
-
-    // -------------------------------------------------------------------------
-    // Frame Selector
-    // -------------------------------------------------------------------------
-    // Values 1-6 (3-bit unsigned). Used ONLY by the Stage 2/3 input path.
-    // Stage 1 input path (Stage1_in) reads all pixels directly and does not
-    // use frame -- it does not implement a sliding window.
-    // The controller cycles frame 1->2->3->4->5->6 during Stage 2/3 operation.
-    output logic [FRAME_NO_WIDTH-1:0]     frame,
-
-    // -------------------------------------------------------------------------
-    // Convolution Output Filter Selectors
-    // -------------------------------------------------------------------------
-    // CONV2_W_MAP_OPT and CONV3_W_MAP_OPT emit the 3456 weights for one output
-    // filter at a time. The future controller should step these selectors across
-    // 0..63 for Stage 2 and 0..127 for Stage 3.
-    input  logic [5:0]                    conv2_filter,
-    input  logic [6:0]                    conv3_filter,
 
     // -------------------------------------------------------------------------
     // Stage 1 Pixel Memory Bus
@@ -336,16 +299,6 @@ module deep_snn_top #(
     input  wire  [3199:0]                 spike_mem,
 
     // -------------------------------------------------------------------------
-    // Write-Back Layout Selector
-    // -------------------------------------------------------------------------
-    // Tells mem_maping_1_2 which memory layout pattern to use when writing
-    // Shaaban spike outputs back to the spike BRAM:
-    //   1'b0 --> Stage 1 writeback: 100 groups of 32 words = 3200 locations
-    //   1'b1 --> Stage 2 writeback: 64 groups of 16 locations
-    // TODO: connect to controller when ready.
-    input  logic                          stage_sel,
-
-    // -------------------------------------------------------------------------
     // Shaaban Hyperparameters
     // -------------------------------------------------------------------------
     // These three values are shared across all 32 Shaaban units.
@@ -371,15 +324,20 @@ module deep_snn_top #(
     // These spikes also feed mem_maping_1_2 for write-back.
     // They will eventually feed the classifier head (GAP -> FC1 -> FC2).
     // TODO: connect to classifier head when implemented.
-    output logic [N_SHAABAN-1:0]          spike_out
+    output logic [N_SHAABAN-1:0]          spike_out,
+
+    // -------------------------------------------------------------------------
+    // Controller Status
+    // -------------------------------------------------------------------------
+    output logic                          done
 
     // NOTE: mem_mapped is intentionally NOT a top-level output port.
     // If declared as "output logic [0:31] mem_mapped [0:3199]", it would
     // create 3200 x 32 = 102,400 physical I/O pins on the FPGA, which is
     // impossible (the XCVU11P has only ~2500 user I/O pins in this package).
     // Instead, mem_maping_1_2 output is wired internally to the BRAM write port.
-    // Only the BRAM control signals (address, write enable) need to be ports,
-    // and those will be driven by the controller when it is implemented.
+    // BRAM control signals are generated by the internal top_controller and
+    // will connect directly when the spike BRAM is instantiated.
 );
 
     // =========================================================================
@@ -393,6 +351,46 @@ module deep_snn_top #(
     //   mac_*     : conv9 array outputs
     //   shb_*     : Shaaban unit inputs/outputs
     // =========================================================================
+
+    // -------------------------------------------------------------------------
+    // Controller outputs
+    // -------------------------------------------------------------------------
+
+    // top_controller owns every stage-control signal used by this datapath.
+    // The BRAM-related controls are declared now and will connect directly to
+    // the spike memory when that memory is instantiated in this module.
+    logic [1:0]                    src_sel;
+    logic [FRAME_NO_WIDTH-1:0]     frame;
+    logic                          stage_sel;
+    logic [5:0]                    conv2_filter;
+    logic [6:0]                    conv3_filter;
+    logic [0:3199]                 ctrl_mem_enable;
+    logic                          ctrl_rd_enable;
+    logic [5:0]                    ctrl_rd_mem_adderss;
+    logic [5:0]                    ctrl_wr_mem_adderss;
+    logic                          ctrl_zero;
+    logic                          ctrl_zero_sel;
+    logic                          ctrl_padding_flag;
+
+    top_controller u_top_controller (
+        .clk            (clk),
+        .rst            (rst),
+        .arst_n         (arst_n),
+        .enable         (enable),
+        .mem_enable     (ctrl_mem_enable),
+        .rd_enable      (ctrl_rd_enable),
+        .stage          (src_sel),
+        .frame          (frame),
+        .stage_sel      (stage_sel),
+        .conv2_filter   (conv2_filter),
+        .conv3_filter   (conv3_filter),
+        .rd_mem_adderss (ctrl_rd_mem_adderss),
+        .wr_mem_adderss (ctrl_wr_mem_adderss),
+        .zero           (ctrl_zero),
+        .zero_sel       (ctrl_zero_sel),
+        .padding_flag   (ctrl_padding_flag),
+        .done           (done)
+    );
 
     // -------------------------------------------------------------------------
     // PATH A: Stage 1 signals
@@ -521,23 +519,6 @@ module deep_snn_top #(
     // This is INTERNAL and does NOT appear as a top-level port (would need 102,400 pins).
     // TODO: Connect to BRAM write data port when BRAM is instantiated below.
     logic [0:31] mem_mapped_internal [0:3199];
-
-    localparam logic [FRAME_NO_WIDTH-1:0] FRAME_FIRST = 1;
-    localparam logic [FRAME_NO_WIDTH-1:0] FRAME_LAST  = FRAME_NO;
-
-    always_ff @(posedge clk or negedge arst_n) begin
-        if (!arst_n) begin
-            frame <= FRAME_FIRST;
-        end else if (rst) begin
-            frame <= FRAME_FIRST;
-        end else if (!enable) begin
-            frame <= frame;
-        end else if ((src_sel == 2'b01) || (src_sel == 2'b10)) begin
-            frame <= (frame >= FRAME_LAST) ? FRAME_FIRST : (frame + 1'b1);
-        end else begin
-            frame <= FRAME_FIRST;
-        end
-    end
 
     // =========================================================================
     // PATH A: STAGE 1 INPUT PIPELINE

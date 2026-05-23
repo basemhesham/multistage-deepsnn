@@ -104,6 +104,7 @@ set source_files [list \
     [file join $repo_root "rtl" "Shabaan Unit" "LIF.v"] \
     [file join $repo_root "rtl" "Shabaan Unit" "shaban_unit_top.v"] \
     [file join $repo_root "rtl" "Controller" "mem_maping_1_2.sv"] \
+    [file join $repo_root "rtl" "Controller" "top_controller.sv"] \
     [file join $repo_root "rtl" "frame" "frame_mapping_iterations_filters.sv"] \
     [file join $repo_root "rtl" "frame" "frame_input_mapping_brackets.sv"] \
     [file join $repo_root "rtl" "Top" "top.sv"] \
