@@ -37,14 +37,40 @@ IDLE
 
 `CLEAR_STAGE2_WORD` prepares the 3200-bit Stage 2 input word before Stage 1 writes real data. It asserts `padding_flag`, `zero_sel`, and all `mem_enable` bits for the Stage 2 destination bank.
 
-`STAGE1` runs 100 cycles for the 10x10 Stage 1 output positions. Each cycle enables one 32-bit group:
+`STAGE1` writes one 10x10x32 Stage 1 output fragment into the Stage 2
+destination word. The destination word is 3200 bits:
 
 ```text
-stage1_pos 0  -> mem_enable[0 +: 32]
-stage1_pos 1  -> mem_enable[32 +: 32]
-...
-stage1_pos 99 -> mem_enable[3168 +: 32]
+10 rows x 10 columns x 32 filters = 3200 bits
 ```
+
+The 32 filters are stored contiguously for each spatial cell. The local cell base
+addresses are:
+
+```text
+row 0: 0,    32,   64,   ... 288
+row 1: 320,  352,  384,  ... 608
+row 2: 640,  672,  704,  ... 928
+...
+row 9: 2880, 2912, 2944, ... 3168
+```
+
+For each 10x10 fragment, the controller enables only real cells. Padding cells
+remain zero because `CLEAR_STAGE2_WORD` clears the destination word before Stage 1
+writes into it.
+
+The full padded Stage 1 output is treated as a 130x130x32 map, split into a
+13x13 grid of 10x10 fragments. Therefore:
+
+| Fragment position | Valid cells | Example enabled groups |
+|---|---:|---|
+| top-left corner | 9x9 = 81 | starts at `352`, then `384`, ... skips top row and left column |
+| top edge | 9x10 = 90 | skips local row 0 |
+| left edge | 10x9 = 90 | skips local column 0 |
+| middle | 10x10 = 100 | enables all groups `0..3168` |
+| right edge | 10x9 = 90 | skips local column 9 |
+| bottom edge | 9x10 = 90 | skips local row 9 |
+| bottom-right corner | 9x9 = 81 | skips local row 9 and local column 9 |
 
 `CLEAR_STAGE3_WORD` prepares the Stage 3 input word before Stage 2 writes real data. It also asserts `padding_flag`, `zero_sel`, and all `mem_enable` bits, but targets the Stage 3 destination bank.
 
@@ -70,7 +96,7 @@ This matches the required layouts:
 
 | Stage write | Destination layout | Padding behavior |
 |---|---|---|
-| Stage 1 output | 100 positions x 32 channels = 3200 bits | Clear all 3200 bits first, then write 100 real 32-bit groups |
+| Stage 1 output | 10x10x32 fragment = 3200 bits | Clear all 3200 bits first, then write only the real non-padding 32-bit groups |
 | Stage 2 output | 64 filters x 16 positions = 1024 used bits | Clear destination first, then write only the 4x4x64 Stage 3 input positions |
 | Stage 3 output | 128 final filter bits | No padded intermediate word is currently needed after Stage 3 |
 
