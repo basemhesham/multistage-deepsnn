@@ -1,5 +1,7 @@
 module top_controller #(
-    parameter int FRAGMENTS_MAX   = 100,
+    parameter int FRAGMENT_ROWS   = 13,
+    parameter int FRAGMENT_COLS   = 13,
+    parameter int FRAGMENTS_MAX   = FRAGMENT_ROWS * FRAGMENT_COLS,
     parameter int TEMPORAL_FRAMES = 16
 )(
     input  logic clk,
@@ -22,7 +24,9 @@ module top_controller #(
     output logic          done
 );
 
-    localparam int STAGE1_POSITIONS = 100;  // 10x10 pooled Stage 1 spikes
+    localparam int FRAGMENT_SIDE    = 10;
+    localparam int STAGE1_CHANNELS  = 32;
+    localparam int STAGE1_POSITIONS = FRAGMENT_SIDE * FRAGMENT_SIDE;
     localparam int STAGE2_FRAMES    = 6;    // 5 full 3-output frames + 1 edge frame
     localparam int STAGE2_FILTERS   = 64;
     localparam int STAGE3_FILTERS   = 128;
@@ -49,7 +53,38 @@ module top_controller #(
     logic [FRAGMENT_W-1:0]     fragment_counter;
     logic [TEMPORAL_W-1:0]     temporal_counter;
 
-    wire stage1_last   = (stage1_pos       == STAGE1_POSITIONS - 1);
+    function automatic int fragment_row(
+        input logic [FRAGMENT_W-1:0] fragment_idx
+    );
+        return fragment_idx / FRAGMENT_COLS;
+    endfunction
+
+    function automatic int fragment_col(
+        input logic [FRAGMENT_W-1:0] fragment_idx
+    );
+        return fragment_idx % FRAGMENT_COLS;
+    endfunction
+
+    function automatic int stage1_valid_positions(
+        input logic [FRAGMENT_W-1:0] fragment_idx
+    );
+        int frag_row;
+        int frag_col;
+        int row_count;
+        int col_count;
+        begin
+            frag_row  = fragment_row(fragment_idx);
+            frag_col  = fragment_col(fragment_idx);
+            row_count = ((frag_row == 0) || (frag_row == FRAGMENT_ROWS - 1)) ?
+                        (FRAGMENT_SIDE - 1) : FRAGMENT_SIDE;
+            col_count = ((frag_col == 0) || (frag_col == FRAGMENT_COLS - 1)) ?
+                        (FRAGMENT_SIDE - 1) : FRAGMENT_SIDE;
+
+            return row_count * col_count;
+        end
+    endfunction
+
+    wire stage1_last   = (stage1_pos == stage1_valid_positions(fragment_counter) - 1);
     wire stage2_last   = (stage2_frame_idx == STAGE2_FRAMES - 1) &&
                          (conv2_filter     == STAGE2_FILTERS - 1);
     wire stage3_last   = (conv3_filter     == STAGE3_FILTERS - 1);
@@ -58,14 +93,37 @@ module top_controller #(
     wire run_complete  = stage3_last && fragment_last && temporal_last;
 
     function automatic logic [0:3199] stage1_write_mask(
-        input logic [STAGE1_CNT_W-1:0] pos
+        input logic [STAGE1_CNT_W-1:0] pos,
+        input logic [FRAGMENT_W-1:0] fragment_idx
     );
         logic [0:3199] mask;
+        int frag_row;
+        int frag_col;
+        int row_start;
+        int col_start;
+        int col_count;
+        int local_valid_row;
+        int local_valid_col;
+        int local_row;
+        int local_col;
         int base;
         begin
             mask = '0;
-            base = pos * 32;
-            mask[base +: 32] = 32'hFFFF_FFFF;
+            frag_row = fragment_row(fragment_idx);
+            frag_col = fragment_col(fragment_idx);
+
+            row_start = (frag_row == 0) ? 1 : 0;
+            col_start = (frag_col == 0) ? 1 : 0;
+            col_count = ((frag_col == 0) || (frag_col == FRAGMENT_COLS - 1)) ?
+                        (FRAGMENT_SIDE - 1) : FRAGMENT_SIDE;
+
+            local_valid_row = pos / col_count;
+            local_valid_col = pos % col_count;
+            local_row       = row_start + local_valid_row;
+            local_col       = col_start + local_valid_col;
+            base            = ((local_row * FRAGMENT_SIDE) + local_col) * STAGE1_CHANNELS;
+
+            mask[base +: STAGE1_CHANNELS] = {STAGE1_CHANNELS{1'b1}};
             return mask;
         end
     endfunction
@@ -205,7 +263,7 @@ module top_controller #(
 
             STAGE1: begin
                 stage          = 2'b00;
-                mem_enable     = stage1_write_mask(stage1_pos);
+                mem_enable     = stage1_write_mask(stage1_pos, fragment_counter);
                 wr_mem_adderss = 6'd0;
             end
 
