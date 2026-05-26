@@ -1,26 +1,23 @@
 <mxfile host="app.diagrams.net" agent="Codex">
   <diagram id="deep_snn_top_simple" name="deep_snn_top_simple">
-    <mxGraphModel dx="3403" dy="2015" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1800" pageHeight="1050" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="4803" dy="2553" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1800" pageHeight="1050" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=26;fontStyle=1;" value="deep_snn_top.sv - Block Diagram with top_controller" vertex="1">
-          <mxGeometry height="50" width="760" x="550" y="-172" as="geometry" />
+        <mxCell id="PGZwSZ027yQDA53IH5cD-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="1141" width="2165" x="-199" y="-66" as="geometry" />
         </mxCell>
-        <mxCell id="top" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#1f1f1f;strokeWidth=3;dashed=1;fontSize=18;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" value="deep_snn_top&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="1032" width="1429" x="230" y="-72" as="geometry" />
+        <mxCell id="title" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=26;fontStyle=1;" value="&lt;font style=&quot;font-size: 34px;&quot;&gt;deep_snn_top.sv&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="760" x="518" y="-166" as="geometry" />
         </mxCell>
-        <mxCell id="ctrl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=3;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 32px;&quot;&gt;Top Controller&lt;/font&gt;" vertex="1">
+        <mxCell id="ctrl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=3;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 30px;&quot;&gt;top_controller&lt;/font&gt;" vertex="1">
           <mxGeometry height="168" width="260" x="752.5" y="-14" as="geometry" />
         </mxCell>
-        <mxCell id="pixel_mem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=17;fontStyle=1;" value="pixel_mem" vertex="1">
-          <mxGeometry height="70" width="150" x="-2" y="252" as="geometry" />
+        <mxCell id="pixel_mem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=15;fontStyle=1;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;pixel_mem&lt;/font&gt;&lt;br&gt;64 x 6912" vertex="1">
+          <mxGeometry height="136" width="170" x="-96" y="275" as="geometry" />
         </mxCell>
-        <mxCell id="spike_mem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=17;fontStyle=1;" value="spike_mem" vertex="1">
-          <mxGeometry height="70" width="150" x="6" y="429" as="geometry" />
-        </mxCell>
-        <mxCell id="params" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=16;fontStyle=1;" value="bias / BN params" vertex="1">
-          <mxGeometry height="70" width="150" x="38" y="845" as="geometry" />
+        <mxCell id="params" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=15;fontStyle=1;" value="bias_bn_params&lt;br&gt;conv_bias / BN params" vertex="1">
+          <mxGeometry height="90" width="170" x="18" y="835" as="geometry" />
         </mxCell>
         <mxCell id="stage3_row_note" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1;dashed=1;fontSize=13;align=left;spacingLeft=6;" value="pixels_s3 row pairs:&#xa;0/1, 2/3, 4/5, 6/7&#xa;rows 8..11 = 0" vertex="1">
           <mxGeometry height="72" width="165" x="800" y="473" as="geometry" />
@@ -37,22 +34,16 @@
         <mxCell id="adder" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=3;fontSize=18;fontStyle=1;" value="adder_tree_&#xa;shaaban_connect" vertex="1">
           <mxGeometry height="100" width="190" x="1070" y="560" as="geometry" />
         </mxCell>
-        <mxCell id="spike_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=19;fontStyle=1;" value="spike_out" vertex="1">
-          <mxGeometry height="70" width="140" x="1701" y="574" as="geometry" />
-        </mxCell>
         <mxCell id="writeback" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=18;fontStyle=1;" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;mem_maping_1_2&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="160" x="1419" y="760" as="geometry" />
+          <mxGeometry height="80" width="160" x="1421" y="776" as="geometry" />
         </mxCell>
-        <mxCell id="bram_todo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;dashed=1;fontSize=18;fontStyle=1;" value="spike BRAM&#xa;TODO&#xa;ctrl reset/enables" vertex="1">
-          <mxGeometry height="96" width="142" x="1691" y="757" as="geometry" />
+        <mxCell id="spike_bram_storage" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=3;fontSize=15;fontStyle=1;" value="&lt;font style=&quot;font-size: 19px;&quot;&gt;spike_mem&lt;br&gt;&lt;/font&gt;64 x 3200" vertex="1">
+          <mxGeometry height="112" width="178" x="1764" y="760" as="geometry" />
         </mxCell>
-        <mxCell id="future_fc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#666666;strokeWidth=2;dashed=1;fontSize=17;fontStyle=1;" value="larger wrapper later&#xa;GAP / FC1 / FC2" vertex="1">
-          <mxGeometry height="90" width="160" x="1691" y="329" as="geometry" />
+        <mxCell id="bram_latency_note" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1;dashed=1;fontSize=13;align=left;spacingLeft=6;" value="BRAM read latency = 1 clk&#xa;Stage2 last cycle prefetches rd_addr=1 for Stage3" vertex="1">
+          <mxGeometry height="64" width="245" x="1405" y="864" as="geometry" />
         </mxCell>
-        <mxCell id="legend" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;rounded=0;fontSize=15;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Dashed red BRAM block is future work; dashed arrows show control paths&lt;/font&gt;&lt;/b&gt;" vertex="1">
-          <mxGeometry height="30" width="607" x="240" y="927" as="geometry" />
-        </mxCell>
-        <mxCell id="e_pixel_stage1" edge="1" parent="1" source="pixel_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="stage1in" value="&lt;b&gt;pixel_mem&lt;/b&gt;">
+        <mxCell id="e_pixel_stage1" edge="1" parent="1" source="pixel_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="stage1in" value="&lt;b&gt;pixel_mem_data[6911:0]&lt;/b&gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_stage1_mux" edge="1" parent="1" source="stage1in" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="pixel_mux" value="pixels_s1">
@@ -60,18 +51,13 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_spike_mem_map" edge="1" parent="1" source="spike_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="mem_mapping" value="&lt;b&gt;spike_mem[3199:0]&lt;/b&gt;">
-          <mxGeometry relative="1" x="-0.1473" y="13" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e_spike_stage3_bin" edge="1" parent="1" source="spike_mem" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.788;exitY=0.979;exitDx=0;exitDy=0;exitPerimeter=0;" target="stage3_bin_mux" value="&lt;b&gt;spike_mem[1023:0]&lt;/b&gt;">
+        <mxCell id="e_spike_stage3_bin" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="stage3_bin_mux" value="&lt;b&gt;spike_mem_data[1023:0]&lt;/b&gt;">
           <mxGeometry relative="1" x="0.086" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">
               <mxPoint x="220" y="595" />
             </Array>
-            <mxPoint x="179" y="464" as="sourcePoint" />
+            <mxPoint x="64" y="467" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="e_frame_mux" edge="1" parent="1" source="frame_mapping" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="pixel_mux" value="pixels_s2">
@@ -133,7 +119,7 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_params_shaaban" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;entryX=0.137;entryY=0.99;entryDx=0;entryDy=0;entryPerimeter=0;" target="shaaban" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;params&lt;/font&gt;">
+        <mxCell id="e_params_shaaban" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;entryX=0.137;entryY=0.99;entryDx=0;entryDy=0;entryPerimeter=0;" target="shaaban" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;conv_bias_param&lt;br&gt;mult/add_weight_param&lt;/font&gt;">
           <mxGeometry relative="1" x="0.5879" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">
@@ -143,21 +129,23 @@
             <mxPoint x="1393.9799999999996" y="731.0000000000001" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_shaaban_spike" edge="1" parent="1" source="shaaban" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" target="spike_out" value="spike_out">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e_shaaban_writeback" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;entryX=0.21;entryY=0.013;entryDx=0;entryDy=0;entryPerimeter=0;" value="shaaban_spike_bus">
+        <mxCell id="e_shaaban_spike" edge="1" parent="1" source="shaaban" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;" value="">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1453.9304714449981" y="658.96" as="sourcePoint" />
-            <mxPoint x="1453" y="763" as="targetPoint" />
+            <mxPoint x="2022" y="605" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_writeback_bram" edge="1" parent="1" source="writeback" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="bram_todo" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;mem_mapped_internal&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;[0:3199]&lt;/font&gt;&lt;/div&gt;">
+        <mxCell id="e_shaaban_writeback" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" value="shaaban_spike_bus">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1453.9304714449981" y="658.96" as="sourcePoint" />
+            <mxPoint x="1457" y="776" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_writeback_bram" edge="1" parent="1" source="writeback" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="spike_bram_storage" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;spike_mem_wr_data[3199:0]&lt;br&gt;bit0 packed, full-word write&lt;/font&gt;">
           <mxGeometry relative="1" x="0.035" y="-21" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_bram_loop" edge="1" parent="1" source="bram_todo" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;exitX=0.467;exitY=1.023;exitDx=0;exitDy=0;exitPerimeter=0;" value="&lt;font style=&quot;font-size: 17px;&quot;&gt;&lt;b&gt;readback&lt;/b&gt;&lt;/font&gt;">
+        <mxCell id="e_bram_loop" edge="1" parent="1" source="spike_bram_storage" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;exitX=0.467;exitY=1.023;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="mem_mapping" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;&lt;br&gt;&lt;/font&gt;">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1757" y="993" />
@@ -165,11 +153,8 @@
               <mxPoint x="-49" y="469" />
             </Array>
             <mxPoint x="1758" y="848" as="sourcePoint" />
-            <mxPoint y="469" as="targetPoint" />
+            <mxPoint x="110" y="468" as="targetPoint" />
           </mxGeometry>
-        </mxCell>
-        <mxCell id="e_spike_future" edge="1" parent="1" source="spike_out" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="future_fc" value="later">
-          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_ctrl_pixmux" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="pixel_mux" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;&lt;b style=&quot;&quot;&gt;stage/src_sel&lt;/b&gt;&lt;/font&gt;">
           <mxGeometry relative="1" x="0.5959" as="geometry">
@@ -184,6 +169,25 @@
             <mxPoint as="offset" />
             <Array as="points">
               <mxPoint x="620" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_pixel_mem" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;rd_mem_adderss&lt;br&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.4902" y="-7" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="13" y="71" />
+            </Array>
+            <mxPoint x="732.08" y="63.376854599406556" as="sourcePoint" />
+            <mxPoint x="9" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_params" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;" target="params" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;stage&lt;br&gt;conv2_filter / conv3_filter&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.8445" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="150" y="100" />
+              <mxPoint x="150" y="835" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -234,7 +238,7 @@
             <mxPoint x="390.4424778761063" y="714" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_bram" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;exitX=0.83;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="bram_todo" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;mem_enable / rd_enable&lt;br&gt;rd_addr / wr_addr&lt;br&gt;padding_flag / zero_sel&lt;/font&gt;">
+        <mxCell id="e_ctrl_bram" edge="1" parent="1" source="ctrl" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;exitX=0.83;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="spike_bram_storage" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;mem_enable / spike_mem_wr_en&lt;br&gt;rd_mem_adderss / wr_mem_adderss&lt;br&gt;zero_sel / padding_flag&lt;/font&gt;">
           <mxGeometry relative="1" x="0.9245" y="71" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">
@@ -243,10 +247,10 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_ctrl_done" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;exitPerimeter=0;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;done&lt;/font&gt;">
+        <mxCell id="e_ctrl_done" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;dashed=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="1012.5" y="29" as="sourcePoint" />
-            <mxPoint x="1713" y="31" as="targetPoint" />
+            <mxPoint x="2010" y="31" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="stage1in" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;" value="Stage1_in&#xa;shift mapping" vertex="1">
@@ -264,8 +268,8 @@
         <mxCell id="mem_mapping" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;" value="mem_mapping" vertex="1">
           <mxGeometry height="80" width="150" x="285" y="424" as="geometry" />
         </mxCell>
-        <mxCell id="6oUTTYJ_7fp9ktXoKg9Q-1" parent="1" style="text;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 20px;&quot;&gt;done&lt;/font&gt;&lt;/b&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="38" width="57" x="1720.99638671875" y="11.000763346354244" as="geometry" />
+        <mxCell id="6oUTTYJ_7fp9ktXoKg9Q-1" parent="1" style="text;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;done&lt;/font&gt;&lt;/b&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="38" width="57" x="2037.99638671875" y="9.000763346354244" as="geometry" />
         </mxCell>
         <mxCell id="e_mem_frame" edge="1" parent="1" source="mem_mapping" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" target="frame_mapping" value="&lt;b&gt;fil_in&lt;/b&gt;&lt;div&gt;&lt;b&gt;[31:0][39:0]&lt;/b&gt;&lt;/div&gt;">
           <mxGeometry relative="1" x="-0.1268" y="-14" as="geometry">
@@ -280,6 +284,39 @@
         </mxCell>
         <mxCell id="pixel_mux" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=17;fontStyle=1;" value="&lt;font style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;pixel MUX&lt;/font&gt;&lt;br&gt;&lt;/font&gt;" vertex="1">
           <mxGeometry height="130" width="130" x="735" y="322" as="geometry" />
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-2" parent="1" style="text;whiteSpace=wrap;fontSize=13;fontStyle=1" value="pixel_mem_wr_en" vertex="1">
+          <mxGeometry height="19" width="125" x="-396" y="281" as="geometry" />
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-3" parent="1" style="text;whiteSpace=wrap;fontSize=13;fontStyle=1" value="pixel_mem_wr_addr" vertex="1">
+          <mxGeometry height="36" width="136" x="-401.5041899956598" y="324.99675998263893" as="geometry" />
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-4" parent="1" style="text;whiteSpace=wrap;fontSize=13;fontStyle=1" value="pixel_mem_wr_data[6911:0]" vertex="1">
+          <mxGeometry height="22" width="178" x="-441" y="379" as="geometry" />
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-5" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;fontSize=13;fontStyle=1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="-262" y="292" as="sourcePoint" />
+            <mxPoint x="-99" y="292" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-9" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;fontSize=13;fontStyle=1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="-258" y="342" as="sourcePoint" />
+            <mxPoint x="-99" y="344" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-10" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;fontSize=13;fontStyle=1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="-255" y="392" as="sourcePoint" />
+            <mxPoint x="-99" y="392" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-11" parent="1" style="text;whiteSpace=wrap;html=1;" value="&lt;b style=&quot;forced-color-adjust: none; color: rgb(0, 0, 0); font-family: Helvetica; font-size: 11px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;&quot;&gt;spike_mem_data[3199:0]&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="136" x="-62" y="443" as="geometry" />
+        </mxCell>
+        <mxCell id="PGZwSZ027yQDA53IH5cD-13" parent="1" style="text;whiteSpace=wrap;fontSize=22;fontStyle=1" value="spike_out" vertex="1">
+          <mxGeometry height="36" width="115" x="2038" y="585" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
