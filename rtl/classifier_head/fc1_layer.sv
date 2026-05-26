@@ -13,7 +13,7 @@
 
 module fc1_layer #(
     parameter int DATA_WIDTH     = 18,
-    parameter int FRAC_BITS      = 10,
+    parameter int FRAC_BITS      = 9,
     parameter int N_INPUTS       = 128,
     parameter int N_OUTPUTS      = 256,
     parameter int ACCUM_WIDTH    = 48,
@@ -103,14 +103,14 @@ module fc1_layer #(
     (* ram_style = "block" *) logic [MAP_BITS-1:0] fc1_map_bram_7 [0:BRAM_DEPTH-1];
 
     initial begin
-        $readmemh("bram_mem/fc1_map_bram_0.mem", fc1_map_bram_0);
-        $readmemh("bram_mem/fc1_map_bram_1.mem", fc1_map_bram_1);
-        $readmemh("bram_mem/fc1_map_bram_2.mem", fc1_map_bram_2);
-        $readmemh("bram_mem/fc1_map_bram_3.mem", fc1_map_bram_3);
-        $readmemh("bram_mem/fc1_map_bram_4.mem", fc1_map_bram_4);
-        $readmemh("bram_mem/fc1_map_bram_5.mem", fc1_map_bram_5);
-        $readmemh("bram_mem/fc1_map_bram_6.mem", fc1_map_bram_6);
-        $readmemh("bram_mem/fc1_map_bram_7.mem", fc1_map_bram_7);
+        $readmemh("fc1_map_bram_0.mem", fc1_map_bram_0);
+        $readmemh("fc1_map_bram_1.mem", fc1_map_bram_1);
+        $readmemh("fc1_map_bram_2.mem", fc1_map_bram_2);
+        $readmemh("fc1_map_bram_3.mem", fc1_map_bram_3);
+        $readmemh("fc1_map_bram_4.mem", fc1_map_bram_4);
+        $readmemh("fc1_map_bram_5.mem", fc1_map_bram_5);
+        $readmemh("fc1_map_bram_6.mem", fc1_map_bram_6);
+        $readmemh("fc1_map_bram_7.mem", fc1_map_bram_7);
     end
 
     // =========================================================================
@@ -299,11 +299,11 @@ module fc1_layer #(
     always_ff @(posedge clk) begin
         if (rst) begin
             for (int o = 0; o < N_OUTPUTS; o++) fc_out[o] <= '0;
-        end else if (state == ST_COMPUTE && batch_done) begin
+        end else if ((state == ST_COMPUTE || state == ST_DONE) && batch_done) begin
+            logic signed [ACCUM_WIDTH-1:0] bias_wide, bias_aligned, total;
+            logic signed [DATA_WIDTH-1:0]  result;
+            int unsigned neuron;
             for (int m = 0; m < PARALLEL_MACS; m++) begin
-                automatic logic signed [ACCUM_WIDTH-1:0] bias_wide, bias_aligned, total;
-                automatic logic signed [DATA_WIDTH-1:0]  result;
-                automatic int unsigned neuron;
                 neuron       = completed_batch_base + m;
                 bias_wide    = $signed(FC1_BIAS[neuron]);
                 bias_aligned = bias_wide <<< FRAC_BITS;
