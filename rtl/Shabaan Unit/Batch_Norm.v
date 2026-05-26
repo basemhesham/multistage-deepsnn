@@ -14,8 +14,20 @@ module Batch_Norm #(
     output wire signed [DATA_WIDTH-1:0] Batch_Norm_out
 );
 
-    wire signed [47:0] P_full;
+    localparam PRODUCT_WIDTH = DATA_WIDTH * 2;
 
+    wire signed [47:0] P_full;
+    wire signed [PRODUCT_WIDTH-1:0] product_full;
+    wire signed [47:0] product_ext;
+    wire signed [47:0] add_ext;
+
+    assign product_full = Batch_Norm_in * mult_wight;
+    assign product_ext = {{(48-PRODUCT_WIDTH){product_full[PRODUCT_WIDTH-1]}}, product_full};
+    assign add_ext = {{(48-DATA_WIDTH){add_wight[DATA_WIDTH-1]}}, add_wight};
+
+`ifdef SIM
+    assign P_full = product_ext + add_ext;
+`else
     DSP48E2 #(
         .ACASCREG       (0),
         .ADREG          (0),
@@ -95,6 +107,7 @@ module Batch_Norm #(
         .PATTERNBDETECT (),
         .XOROUT         ()
     );
+`endif
 
     assign Batch_Norm_out = P_full[36:19];
 

@@ -17,7 +17,17 @@ module adder_layer2 #(
 );
 
     wire signed [47:0] P_full;
+    wire signed [47:0] add_1_ext;
+    wire signed [47:0] add_2_ext;
+    wire signed [47:0] add_3_ext;
 
+    assign add_1_ext = {{(48-IN_WIDTH){add_1[IN_WIDTH-1]}}, add_1};
+    assign add_2_ext = {{(48-IN_WIDTH){add_2[IN_WIDTH-1]}}, add_2};
+    assign add_3_ext = {{(48-IN_WIDTH){add_3[IN_WIDTH-1]}}, add_3};
+
+`ifdef SIM
+    assign P_full = add_1_ext + add_2_ext + add_3_ext;
+`else
     DSP48E2 #(
         .ACASCREG       (0),
         .ADREG          (0),
@@ -100,6 +110,7 @@ module adder_layer2 #(
         .PATTERNBDETECT (),
         .XOROUT         ()
     );
+`endif
 
     assign adder_out = P_full[OUT_WIDTH-1:0];
 

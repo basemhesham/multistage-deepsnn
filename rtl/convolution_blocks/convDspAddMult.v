@@ -20,8 +20,25 @@ module xbip_dsp48_macro_cascade #(
 );
 
     wire signed [29:0] A_ext;
-    assign A_ext = {{(30-PIXEL_W){A[PIXEL_W-1]}}, A};
+    wire signed [(2*PIXEL_W)-1:0] product_full;
+    wire signed [47:0] product_ext;
 
+    assign A_ext = {{(30-PIXEL_W){A[PIXEL_W-1]}}, A};
+    assign product_full = A * B;
+    assign product_ext = {{(48-(2*PIXEL_W)){product_full[(2*PIXEL_W)-1]}}, product_full};
+
+`ifdef SIM
+    logic signed [47:0] P_sim;
+
+    // Behavioral simulation model for tools that do not know Xilinx DSP48E2.
+    // PREG=1 in the real primitive, so keep one clock of latency here.
+    always_ff @(posedge CLK) begin
+        P_sim <= product_ext + PCIN;
+    end
+
+    assign PCOUT = P_sim;
+    assign P_fab = P_sim;
+`else
     (* keep = "true" *)
     DSP48E2 #(
         .ACASCREG       (0),
@@ -107,5 +124,6 @@ module xbip_dsp48_macro_cascade #(
         .PATTERNBDETECT (),
         .XOROUT         ()
     );
+`endif
 
 endmodule

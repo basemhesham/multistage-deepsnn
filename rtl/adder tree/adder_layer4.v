@@ -23,6 +23,9 @@ module adder_layer4 #(
     assign add_1_ext = {{(48-IN1_WIDTH){add_1[IN1_WIDTH-1]}}, add_1};
     assign add_2_ext = {{(48-IN2_WIDTH){add_2[IN2_WIDTH-1]}}, add_2};
 
+`ifdef SIM
+    assign P_full = add_1_ext + add_2_ext;
+`else
     DSP48E2 #(
         .ACASCREG       (0),
         .ADREG          (0),
@@ -103,6 +106,7 @@ module adder_layer4 #(
         .PATTERNBDETECT (),
         .XOROUT         ()
     );
+`endif
 
     assign adder_out = P_full[OUT_WIDTH-1:0];
 
