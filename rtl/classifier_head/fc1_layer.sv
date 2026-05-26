@@ -183,7 +183,7 @@ module fc1_layer #(
         next_state = state;
         case (state)
             ST_IDLE:    if (start)                                               next_state = ST_COMPUTE;
-            ST_COMPUTE: if (batch_done && batch_idx == NUM_BATCHES - 1)          next_state = ST_DONE;
+            ST_COMPUTE: if (batch_done && !compute_active)                        next_state = ST_DONE;
             ST_DONE:                                                               next_state = ST_IDLE;
             default:                                                               next_state = ST_IDLE;
         endcase
