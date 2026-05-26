@@ -27,6 +27,8 @@ module top_controller #(
     localparam int FRAGMENT_SIDE    = 10;
     localparam int STAGE1_CHANNELS  = 32;
     localparam int STAGE1_POSITIONS = FRAGMENT_SIDE * FRAGMENT_SIDE;
+    localparam int STAGE2_SIDE      = 4;
+    localparam int STAGE2_POSITIONS = STAGE2_SIDE * STAGE2_SIDE;
     localparam int STAGE2_FRAMES    = 6;    // 5 full 3-output frames + 1 edge frame
     localparam int STAGE2_FILTERS   = 64;
     localparam int STAGE3_FILTERS   = 128;
@@ -130,23 +132,52 @@ module top_controller #(
 
     function automatic logic [0:3199] stage2_write_mask(
         input logic [5:0] filter,
-        input logic [STAGE2_FRAME_W-1:0] frame_idx
+        input logic [STAGE2_FRAME_W-1:0] frame_idx,
+        input logic [FRAGMENT_W-1:0] fragment_idx
     );
         logic [0:3199] mask;
         int base;
         int pos;
+        int first_pos;
+        int positions_in_frame;
+        int p;
         begin
             mask = '0;
-            base = filter * 16;
+            base = filter * STAGE2_POSITIONS;
+            first_pos = frame_idx * 3;
+            positions_in_frame = (frame_idx == STAGE2_FRAMES - 1) ? 1 : 3;
 
-            if (frame_idx == STAGE2_FRAMES - 1) begin
-                mask[base + 15] = 1'b1;
-            end else begin
-                pos = base + (frame_idx * 3);
-                mask[pos +: 3] = 3'b111;
+            for (p = 0; p < 3; p = p + 1) begin
+                if (p < positions_in_frame) begin
+                    pos = first_pos + p;
+                    if (stage2_position_valid(pos, fragment_idx)) begin
+                        mask[base + pos] = 1'b1;
+                    end
+                end
             end
 
             return mask;
+        end
+    endfunction
+
+    function automatic logic stage2_position_valid(
+        input int local_pos,
+        input logic [FRAGMENT_W-1:0] fragment_idx
+    );
+        int frag_row;
+        int frag_col;
+        int local_row;
+        int local_col;
+        begin
+            frag_row  = fragment_row(fragment_idx);
+            frag_col  = fragment_col(fragment_idx);
+            local_row = local_pos / STAGE2_SIDE;
+            local_col = local_pos % STAGE2_SIDE;
+
+            return !(((frag_row == 0) && (local_row == 0)) ||
+                     ((frag_row == FRAGMENT_ROWS - 1) && (local_row == STAGE2_SIDE - 1)) ||
+                     ((frag_col == 0) && (local_col == 0)) ||
+                     ((frag_col == FRAGMENT_COLS - 1) && (local_col == STAGE2_SIDE - 1)));
         end
     endfunction
 
@@ -279,9 +310,9 @@ module top_controller #(
                 frame          = stage2_frame_idx + 3'd1;
                 stage_sel      = 1'b1;
                 rd_enable      = 1'b1;
-                rd_mem_adderss = 6'd0;
+                rd_mem_adderss = stage2_last ? 6'd1 : 6'd0;
                 wr_mem_adderss = 6'd1;
-                mem_enable     = stage2_write_mask(conv2_filter, stage2_frame_idx);
+                mem_enable     = stage2_write_mask(conv2_filter, stage2_frame_idx, fragment_counter);
             end
 
             STAGE3: begin

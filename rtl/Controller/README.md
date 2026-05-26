@@ -11,12 +11,12 @@ The controller is instantiated inside `rtl/Top/top.sv`, so these control signals
 | `stage_sel` | `mem_maping_1_2` | Selects Stage 1-to-2 or Stage 2-to-3 writeback layout |
 | `conv2_filter` | `CONV2_W_MAP_OPT` | Selects Stage 2 output filter `0..63` |
 | `conv3_filter` | `CONV3_W_MAP_OPT` | Selects Stage 3 output filter `0..127` |
-| `mem_enable` | future spike memory write/reset enables | Selects which memory bits are written or reset |
-| `rd_enable` | future spike memory read enable | Enables readback for Stage 2/3 |
-| `rd_mem_adderss` | future spike memory read address | Selects source memory bank |
-| `wr_mem_adderss` | future spike memory write address | Selects destination memory bank |
-| `zero_sel` | future padding/reset path | Indicates padding clear operation |
-| `padding_flag` | future memory-bit reset control | Asserted while clearing padded destination memory |
+| `mem_enable` | spike memory write/reset enables | Selects which memory bits are written or reset |
+| `rd_enable` | spike memory read enable | Enables readback for Stage 2/3 |
+| `rd_mem_adderss` | spike memory read address | Selects source memory bank |
+| `wr_mem_adderss` | spike memory write address | Selects destination memory bank |
+| `zero_sel` | padding/reset path | Indicates padding clear operation |
+| `padding_flag` | memory-bit reset control | Asserted while clearing padded destination memory |
 | `done` | top-level status | Asserted after all configured fragments and temporal frames complete |
 
 ## FSM
@@ -74,7 +74,42 @@ The full padded Stage 1 output is treated as a 130x130x32 map, split into a
 
 `CLEAR_STAGE3_WORD` prepares the Stage 3 input word before Stage 2 writes real data. It also asserts `padding_flag`, `zero_sel`, and all `mem_enable` bits, but targets the Stage 3 destination bank.
 
-`STAGE2` cycles `frame = 1..6` for each `conv2_filter = 0..63`. This matches the Stage 2 writeback layout used by `mem_maping_1_2`: each filter owns 16 spatial locations. Frames `1..5` enable three locations each, and frame `6` enables the final edge location.
+`STAGE2` cycles `frame = 1..6` for each `conv2_filter = 0..63`. This matches
+the Stage 2 writeback layout used by `mem_maping_1_2`: each filter owns 16
+spatial locations arranged as a local 4x4 block.
+
+The Stage 2 global output is treated as a 64x64x64 map padded to 66x66x64 for
+Stage 3. The controller applies the same location-based padding rule used by
+Stage 1, but on the local 4x4 Stage 2 output block:
+
+| Fragment position | Valid local Stage 2 cells | Padding behavior |
+|---|---:|---|
+| top-left corner | 3x3 = 9 | skip local row 0 and local column 0 |
+| top edge | 3x4 = 12 | skip local row 0 |
+| left edge | 4x3 = 12 | skip local column 0 |
+| middle | 4x4 = 16 | enable all 16 local positions |
+| right edge | 4x3 = 12 | skip local column 3 |
+| bottom edge | 3x4 = 12 | skip local row 3 |
+| bottom-right corner | 3x3 = 9 | skip local row 3 and local column 3 |
+
+The controller still walks through the existing six frame groups:
+
+```text
+frame 1 -> positions 0, 1, 2
+frame 2 -> positions 3, 4, 5
+frame 3 -> positions 6, 7, 8
+frame 4 -> positions 9, 10, 11
+frame 5 -> positions 12, 13, 14
+frame 6 -> position 15
+```
+
+For each group it enables only the non-padding positions. Padding positions stay
+zero because `CLEAR_STAGE3_WORD` clears the Stage 3 destination word before
+Stage 2 writes real data.
+
+On the final Stage 2 cycle, `rd_mem_adderss` switches from bank 0 to bank 1.
+This prefetches the Stage 2 writeback word for the first Stage 3 cycle because
+the local `spike_mem` block is implemented as synchronous BRAM.
 
 `STAGE3` cycles `conv3_filter = 0..127`. Each cycle enables one final output-filter location.
 
@@ -97,7 +132,7 @@ This matches the required layouts:
 | Stage write | Destination layout | Padding behavior |
 |---|---|---|
 | Stage 1 output | 10x10x32 fragment = 3200 bits | Clear all 3200 bits first, then write only the real non-padding 32-bit groups |
-| Stage 2 output | 64 filters x 16 positions = 1024 used bits | Clear destination first, then write only the 4x4x64 Stage 3 input positions |
+| Stage 2 output | 64 filters x 16 positions = 1024 used bits | Clear destination first, then write only real non-padding positions from the 4x4x64 Stage 3 input block |
 | Stage 3 output | 128 final filter bits | No padded intermediate word is currently needed after Stage 3 |
 
 ## Top Integration
@@ -110,4 +145,5 @@ This matches the required layouts:
 
 The controller output `stage_sel` drives `mem_maping_1_2`, so Stage 1 and Stage 2 writebacks use the correct packed memory layout.
 
-The BRAM itself is still future work in `top.sv`. The controller already provides the write/read enables, addresses, and padding reset controls that the BRAM wrapper should consume.
+`top.sv` now instantiates local BRAM-style memory wrappers. The controller
+provides their write/read enables, addresses, and padding reset controls.
