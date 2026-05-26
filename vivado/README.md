@@ -15,32 +15,26 @@ project for the current `deep_snn_top` integration.
 - Copies those RTL files into:
   `build/vivado/src`
 - Uses explicit RTL `DSP48E2` primitive instances. Vivado resolves `DSP48E2`
-  from its built-in UNISIM library, so no DSP IP core or extra IP repository is
-  added by the script.
+  from its built-in UNISIM library.
+- Creates a Vivado IP Catalog `DSP48 Macro` core
+  (`xilinx.com:ip:xbip_dsp48_macro`) named `dsp48_macro_dspe2` so a DSP IP
+  appears under **IP Sources** in the GUI.
 
-## Why DSP Blocks Do Not Appear Under IP Sources
+## DSP48E2 RTL And IP Catalog
 
-This project uses manual `DSP48E2` primitive instantiation in RTL. That is
-different from adding a Vivado "DSP48 Macro" IP core.
+The actual arithmetic RTL uses manual `DSP48E2` primitive instantiation. The
+`DSP48 Macro` IP (`xbip_dsp48_macro`) created by the script is added for
+project/IP-catalog visibility in the GUI; it is not instantiated by
+`deep_snn_top`.
 
-Because of that:
+Because the RTL primitives are not IP instances:
 
-- `DSP48E2` blocks will not appear under **IP Sources**.
+- RTL `DSP48E2` blocks appear after RTL elaboration or synthesis.
+- The `dsp48_macro_dspe2` IP appears under **IP Sources**.
+- Vivado simulation uses the `SIM` define from `sim_1`, which selects
+  behavioral DSP math models instead of elaborating raw `DSP48E2` primitives.
 - The `INFO: [IP_Flow ...]` messages during `create_project` are normal Vivado
   project startup messages.
-- `DSP48E2` cells appear only after RTL elaboration or synthesis.
-- After synthesis, the script writes a Vivado-2018.2-compatible DSP48E2 cell
-  report in:
-
-  ```text
-  build/vivado/reports/deep_snn_top_dsp_synth.rpt
-  ```
-
-  The normal utilization report also includes DSP usage:
-
-  ```text
-  build/vivado/reports/deep_snn_top_utilization_synth.rpt
-  ```
 
 To check DSP cells from the Vivado Tcl Console after elaboration or synthesis:
 
@@ -58,6 +52,29 @@ The copy step is intentional. Vivado 2018.2 had trouble adding source files from
 paths with spaces and parentheses, such as `SNN Parameters/Final Parameters (RTL)`.
 Edit the original RTL files under `rtl/`, then rerun the TCL script to refresh
 the staged copies.
+
+## Simulation DSP Mode
+
+The RTL DSP wrapper files contain `ifdef SIM` behavioral models. Use this define
+when running a non-synthesis simulation so tools do not need to elaborate the
+Xilinx `DSP48E2` primitive.
+
+This project script applies the define only to the Vivado simulation fileset:
+
+```tcl
+set_property verilog_define {SIM} [get_filesets sim_1]
+set_property -name xsim.elaborate.xelab.more_options -value {--timescale 1ns/1ps} -objects [get_filesets sim_1]
+```
+
+For command-line simulators, pass the equivalent compile option, for example:
+
+```text
++define+SIM
+xelab --timescale 1ns/1ps
+```
+
+Do not define `SIM` for synthesis. Without `SIM`, the RTL instantiates the real
+manual `DSP48E2` blocks.
 
 ## Run From Vivado GUI
 
@@ -89,11 +106,8 @@ set argv [list]
 source {C:/Users/PC/Desktop/STM/Repo/MultiStage-DeepSNN/vivado/create_deep_snn_top_project.tcl}
 ```
 
-When synthesis completes, reports are written to:
-
-```text
-build/vivado/reports/
-```
+When synthesis completes, the script opens `synth_1` and prints a short DSP48E2
+cell summary in the Tcl Console. It does not write timing or utilization reports.
 
 ## Quick RTL Elaboration Check
 
