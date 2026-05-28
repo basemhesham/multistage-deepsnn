@@ -7,6 +7,10 @@ module mem_maping_1_2 (
     integer i, j, n, k;
 
     always_comb begin
+        for (i = 0; i < 3200; i = i + 1) begin
+            mem_mapped[i] = 32'b0;
+        end
+
         case (stage_sel)
             // ==============================================================
             // STAGE 1
@@ -37,6 +41,9 @@ module mem_maping_1_2 (
                     // 2. Map the 16th memory location (Grey) using the 6th word from input array
                     mem_mapped[(n * 16) + 15] = shaaban_out[0];
                 end
+            end
+
+            default: begin
             end
         endcase
     end

@@ -13,6 +13,7 @@ set script_dir  [file dirname $script_path]
 set repo_root   [file dirname $script_dir]
 set project_dir [file join $repo_root "build" "vivado" "deep_snn_top"]
 set staged_dir  [file join $repo_root "build" "vivado" "src"]
+set constr_file [file join $repo_root "vivado" "deep_snn_top.xdc"]
 set part_name   "xcvu11p-flga2577-3-e"
 set top_name    "deep_snn_top"
 set run_synth   1
@@ -81,6 +82,7 @@ set_property -name xsim.elaborate.xelab.more_options -value {--timescale 1ns/1ps
 add_dsp48_macro_ip
 
 set final_param_dir [file join $repo_root "rtl" "SNN Parameters" "Final Parameters (RTL)"]
+set classifier_dir [file join $repo_root "rtl" "classifier_head"]
 
 set source_files [list \
     [file join $final_param_dir "UNIQUE_CONV1_WEIGHTS.sv"] \
@@ -110,6 +112,9 @@ set source_files [list \
     [file join $repo_root "rtl" "Top" "pixel_mem.sv"] \
     [file join $repo_root "rtl" "Top" "spike_mem.sv"] \
     [file join $repo_root "rtl" "Top" "bias_bn_params.sv"] \
+    [file join $repo_root "rtl" "Top" "global_average_pool.sv"] \
+    [file join $classifier_dir "fc1_layer.sv"] \
+    [file join $classifier_dir "fc2_layer.sv"] \
     [file join $repo_root "rtl" "Top" "top.sv"] \
 ]
 
@@ -120,9 +125,26 @@ set include_files [list \
     [file join $final_param_dir "BN2_BIAS.sv"] \
     [file join $final_param_dir "BN3_WEIGHTS.sv"] \
     [file join $final_param_dir "BN3_BIAS.sv"] \
+    [file join $classifier_dir "UNIQUE_FC1_W.svh"] \
+    [file join $classifier_dir "UNIQUE_FC2_W.svh"] \
 ]
 
-foreach src [concat $source_files $include_files] {
+set memory_files [list \
+    [file join $classifier_dir "fc1_map_bram_0.mem"] \
+    [file join $classifier_dir "fc1_map_bram_1.mem"] \
+    [file join $classifier_dir "fc1_map_bram_2.mem"] \
+    [file join $classifier_dir "fc1_map_bram_3.mem"] \
+    [file join $classifier_dir "fc1_map_bram_4.mem"] \
+    [file join $classifier_dir "fc1_map_bram_5.mem"] \
+    [file join $classifier_dir "fc1_map_bram_6.mem"] \
+    [file join $classifier_dir "fc1_map_bram_7.mem"] \
+    [file join $classifier_dir "fc2_map_bram_0.mem"] \
+    [file join $classifier_dir "fc2_map_bram_1.mem"] \
+    [file join $classifier_dir "fc2_map_bram_2.mem"] \
+    [file join $classifier_dir "fc2_map_bram_3.mem"] \
+]
+
+foreach src [concat $source_files $include_files $memory_files [list $constr_file]] {
     if {![file exists $src]} {
         error "Required source file does not exist: $src"
     }
@@ -138,9 +160,20 @@ foreach src $include_files {
     set dst [file join $staged_dir [file tail $src]]
     file copy -force $src $dst
 }
+set staged_memory_files [list]
+foreach src $memory_files {
+    set dst [file join $staged_dir [file tail $src]]
+    file copy -force $src $dst
+    lappend staged_memory_files $dst
+}
+set staged_constr_file [file join $staged_dir [file tail $constr_file]]
+file copy -force $constr_file $staged_constr_file
 
 add_files -norecurse -fileset sources_1 $staged_files
 set_property file_type SystemVerilog [get_files -quiet $staged_files]
+add_files -norecurse -fileset sources_1 $staged_memory_files
+set_property file_type {Memory Initialization Files} [get_files -quiet $staged_memory_files]
+add_files -norecurse -fileset constrs_1 $staged_constr_file
 set_property include_dirs [list $staged_dir] [get_filesets sources_1]
 set_property top $top_name [get_filesets sources_1]
 update_compile_order -fileset sources_1
@@ -150,6 +183,8 @@ puts "  Project: $project_dir"
 puts "  Part:    $part_name"
 puts "  Top:     $top_name"
 puts "  Sources: [llength $staged_files]"
+puts "  Memory init files: [llength $staged_memory_files]"
+puts "  Constraints: [file tail $staged_constr_file]"
 puts "  Sim def: SIM is enabled on sim_1 so behavioral DSP models are used for simulation"
 puts "  Sim opt: xsim xelab default timescale is 1ns/1ps"
 
