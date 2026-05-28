@@ -21,6 +21,7 @@ module top_controller #(
     output logic          zero,
     output logic          zero_sel,
     output logic          padding_flag,
+    output logic          gap_valid,
     output logic          done
 );
 
@@ -282,6 +283,7 @@ module top_controller #(
         zero            = 1'b0;
         zero_sel        = 1'b0;
         padding_flag    = 1'b0;
+        gap_valid       = 1'b0;
         done            = (cs == DONE);
 
         unique case (cs)
@@ -322,6 +324,7 @@ module top_controller #(
                 rd_mem_adderss = 6'd1;
                 wr_mem_adderss = 6'd2;
                 mem_enable[conv3_filter] = 1'b1;
+                gap_valid      = temporal_last;
             end
 
             default: begin

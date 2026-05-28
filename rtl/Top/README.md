@@ -91,10 +91,43 @@ conv9 array, 12 x 32 units
   -> adder_tree_shaaban_connect
   -> 32 shaban_unit_top instances
   -> mem_maping_1_2 writeback
+  -> global_average_pool
+  -> FC1/FC2 classifier head
 ```
 
 The weight ROM modules are distributed LUT logic. This is used because the
 `conv9` array needs 3456 weights visible in parallel.
+
+## Classifier Head
+
+`top.sv` instantiates the classifier layers from `rtl/classifier_head`:
+
+| Block | File | Purpose |
+|---|---|---|
+| `global_average_pool` | `global_average_pool.sv` | Averages Stage 3 spikes per channel before FC1 |
+| `fc1_layer` | `fc1_layer.sv` | 128 Stage 3 features to 256 hidden values with ReLU |
+| `fc2_layer` | `fc2_layer.sv` | 256 hidden values to 4 class logits |
+
+During Stage 3, the top sends the active Shaaban spike from unit 0 into
+`global_average_pool` using `conv3_filter` as the channel index. The controller
+asserts `gap_valid` only on the final temporal pass, matching the Python
+reference where GAP is applied to the final `spk3` map after the temporal loop.
+The GAP block accumulates one spatial sample per channel per fragment, then
+divides by `CTRL_FRAGMENTS_MAX` to produce the 128 fixed-point FC1 inputs.
+
+When the SNN controller asserts `snn_done`, GAP finalization starts. `fc1_layer`
+starts from `gap_done`, `fc2_layer` starts from `fc1_done`, and `done` is now
+driven by the final `fc2_done` pulse. The intermediate SNN completion flag is
+still available as the top-level `snn_done` output.
+
+`class_logits` packs the four FC2 outputs as 18-bit words:
+
+```text
+class_logits[17:0]   = class 0
+class_logits[35:18]  = class 1
+class_logits[53:36]  = class 2
+class_logits[71:54]  = class 3
+```
 
 ## DSP48E2 Mapping
 
@@ -132,5 +165,4 @@ C:/Xilinx/Vivado/2018.2/scripts/rt/data/unisim_comp.v
 
 - Replace the simple local memories with board-level BRAM/URAM interfaces when
   the external input/write path is finalized.
-- Add the classifier head after the Stage 3 output path.
 - Finish the full temporal frame loop around the LIF state behavior.

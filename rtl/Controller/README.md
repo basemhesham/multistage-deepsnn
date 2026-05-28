@@ -17,6 +17,7 @@ The controller is instantiated inside `rtl/Top/top.sv`, so these control signals
 | `wr_mem_adderss` | spike memory write address | Selects destination memory bank |
 | `zero_sel` | padding/reset path | Indicates padding clear operation |
 | `padding_flag` | memory-bit reset control | Asserted while clearing padded destination memory |
+| `gap_valid` | global average pooling | Enables Stage 3 samples on the final temporal pass only |
 | `done` | top-level status | Asserted after all configured fragments and temporal frames complete |
 
 ## FSM

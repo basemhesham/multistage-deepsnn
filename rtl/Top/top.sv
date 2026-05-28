@@ -9,6 +9,7 @@ module deep_snn_top #(
     parameter int INPUTS_PER_SHB = 4,
     parameter int FRAME_NO       = 6,
     parameter int FRAME_NO_WIDTH = 3,
+    parameter int CLASSIFIER_FRAC_BITS = 9,
     parameter int CTRL_FRAGMENT_ROWS   = 13,
     parameter int CTRL_FRAGMENT_COLS   = 13,
     parameter int CTRL_FRAGMENTS_MAX   = CTRL_FRAGMENT_ROWS * CTRL_FRAGMENT_COLS,
@@ -24,9 +25,17 @@ module deep_snn_top #(
     input  logic [(384*PIXEL_W)-1:0]      pixel_mem_wr_data,
 
     output logic [N_SHAABAN-1:0]          spike_out,
+    output logic [(4*DATA_WIDTH)-1:0]      class_logits,
+    output logic                          classifier_done,
+    output logic                          classifier_busy,
+    output logic                          snn_done,
     output logic                          done
 
 );
+
+    localparam int FC1_INPUTS  = 128;
+    localparam int FC1_OUTPUTS = 256;
+    localparam int FC2_OUTPUTS = 4;
 
     logic [1:0]                    src_sel;
     logic [FRAME_NO_WIDTH-1:0]     frame;
@@ -40,6 +49,12 @@ module deep_snn_top #(
     logic                          ctrl_zero;
     logic                          ctrl_zero_sel;
     logic                          ctrl_padding_flag;
+    logic                          gap_sample_enable;
+    logic                          gap_clear;
+    logic                          gap_done;
+    logic                          gap_busy;
+    logic                          enable_d;
+    logic                          snn_done_d;
     logic                          spike_mem_wr_en;
     logic [3199:0]                 spike_mem_wr_data;
     logic [(384*PIXEL_W)-1:0]      pixel_mem_data;
@@ -47,6 +62,15 @@ module deep_snn_top #(
     logic signed [DATA_WIDTH-1:0]  conv_bias_param [0:N_SHAABAN-1];
     logic signed [DATA_WIDTH-1:0]  mult_weight_param [0:N_SHAABAN-1];
     logic signed [DATA_WIDTH-1:0]  add_weight_param  [0:N_SHAABAN-1];
+    logic signed [DATA_WIDTH-1:0]  fc1_in  [0:FC1_INPUTS-1];
+    logic signed [DATA_WIDTH-1:0]  fc1_out [0:FC1_OUTPUTS-1];
+    logic signed [DATA_WIDTH-1:0]  fc2_out [0:FC2_OUTPUTS-1];
+    logic                          fc1_start;
+    logic                          fc1_done;
+    logic                          fc1_busy;
+    logic                          fc2_start;
+    logic                          fc2_done;
+    logic                          fc2_busy;
 
     top_controller #(
         .FRAGMENT_ROWS   (CTRL_FRAGMENT_ROWS),
@@ -70,7 +94,8 @@ module deep_snn_top #(
         .zero           (ctrl_zero),
         .zero_sel       (ctrl_zero_sel),
         .padding_flag   (ctrl_padding_flag),
-        .done           (done)
+        .gap_valid      (gap_sample_enable),
+        .done           (snn_done)
     );
 
     pixel_mem #(
@@ -404,5 +429,80 @@ module deep_snn_top #(
         .shaaban_out (shaaban_spike_bus),    // 32 x 32-bit spike words
         .mem_mapped  (mem_mapped_internal)  // 3200 x 32-bit output (internal only)
     );
+
+    always_ff @(posedge clk or negedge arst_n) begin
+        if (!arst_n) begin
+            enable_d   <= 1'b0;
+            snn_done_d <= 1'b0;
+        end else if (rst) begin
+            enable_d   <= 1'b0;
+            snn_done_d <= 1'b0;
+        end else begin
+            enable_d   <= enable;
+            snn_done_d <= snn_done;
+        end
+    end
+
+    assign gap_clear       = enable && !enable_d;
+    assign fc1_start       = gap_done;
+    assign fc2_start       = fc1_done;
+    assign classifier_done = fc2_done;
+    assign classifier_busy = gap_busy || fc1_busy || fc2_busy;
+    assign done            = classifier_done;
+
+    global_average_pool #(
+        .DATA_WIDTH   (DATA_WIDTH),
+        .FRAC_BITS    (CLASSIFIER_FRAC_BITS),
+        .CHANNELS     (FC1_INPUTS),
+        .SAMPLE_COUNT (CTRL_FRAGMENTS_MAX)
+    ) u_global_average_pool (
+        .clk            (clk),
+        .rst            (rst),
+        .clear          (gap_clear),
+        .sample_valid   ((src_sel == 2'b10) && gap_sample_enable && ctrl_mem_enable[conv3_filter]),
+        .sample_channel (conv3_filter),
+        .sample_spike   (spike_out[0]),
+        .start          (snn_done && !snn_done_d),
+        .pool_out       (fc1_in),
+        .done           (gap_done),
+        .busy           (gap_busy)
+    );
+
+    fc1_layer #(
+        .DATA_WIDTH  (DATA_WIDTH),
+        .FRAC_BITS   (CLASSIFIER_FRAC_BITS),
+        .N_INPUTS    (FC1_INPUTS),
+        .N_OUTPUTS   (FC1_OUTPUTS)
+    ) u_fc1_layer (
+        .clk    (clk),
+        .rst    (rst),
+        .fc_in  (fc1_in),
+        .start  (fc1_start),
+        .fc_out (fc1_out),
+        .done   (fc1_done),
+        .busy   (fc1_busy)
+    );
+
+    fc2_layer #(
+        .DATA_WIDTH (DATA_WIDTH),
+        .FRAC_BITS  (CLASSIFIER_FRAC_BITS),
+        .N_INPUTS   (FC1_OUTPUTS),
+        .N_OUTPUTS  (FC2_OUTPUTS)
+    ) u_fc2_layer (
+        .clk    (clk),
+        .rst    (rst),
+        .fc_in  (fc1_out),
+        .start  (fc2_start),
+        .fc_out (fc2_out),
+        .done   (fc2_done),
+        .busy   (fc2_busy)
+    );
+
+    genvar logit_idx;
+    generate
+        for (logit_idx = 0; logit_idx < FC2_OUTPUTS; logit_idx++) begin : gen_class_logits
+            assign class_logits[(logit_idx * DATA_WIDTH) +: DATA_WIDTH] = fc2_out[logit_idx];
+        end
+    endgenerate
 
 endmodule

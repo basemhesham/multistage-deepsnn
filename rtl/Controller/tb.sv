@@ -29,6 +29,7 @@ module tb;
     logic          zero;
     logic          zero_sel;
     logic          padding_flag;
+    logic          gap_valid;
     logic          done;
 
     int checks;
@@ -66,6 +67,7 @@ module tb;
         .zero            (zero),
         .zero_sel        (zero_sel),
         .padding_flag    (padding_flag),
+        .gap_valid       (gap_valid),
         .done            (done)
     );
 
