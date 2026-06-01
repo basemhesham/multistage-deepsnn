@@ -1,0 +1,170 @@
+`timescale 1ns / 1ps
+
+module top_pixel_source_mapper #(
+    parameter int PIXEL_W        = 18,
+    parameter int FRAME_NO       = 6,
+    parameter int FRAME_NO_WIDTH = 3
+)(
+    input  logic                         clk,
+    input  logic                         arst_n,
+    input  logic [1:0]                   src_sel,
+    input  logic [FRAME_NO_WIDTH-1:0]    frame,
+    input  logic [(384*PIXEL_W)-1:0]     pixel_mem_data,
+    input  logic [3199:0]                spike_mem_data,
+    output logic signed [PIXEL_W-1:0]    pixels_mapped [0:11][0:31][0:8]
+);
+
+    logic signed [PIXEL_W-1:0] in_mem [0:383];
+    logic signed [PIXEL_W-1:0] p_imag [0:383];
+    logic signed [PIXEL_W-1:0] pixels_s1 [0:11][0:31][0:8];
+    logic fil_in [31:0][39:0];
+    logic conv_windows [31:0][11:0][8:0];
+    logic signed [PIXEL_W-1:0] pixels_s2 [0:11][0:31][0:8];
+    logic stage3_mem [0:1023];
+    logic stage3_windows [0:8][0:3][0:63];
+    logic signed [PIXEL_W-1:0] pixels_s3 [0:11][0:31][0:8];
+
+    genvar m;
+    generate
+        for (m = 0; m < 384; m++) begin : gen_inmem
+            assign in_mem[m] = $signed(pixel_mem_data[m*PIXEL_W +: PIXEL_W]);
+        end
+    endgenerate
+
+    genvar b, j;
+    generate
+        for (b = 0; b < 12; b = b + 1) begin : gen_state_0
+            if (b % 3 == 0) begin : state_0
+                for (j = 0; j < 32; j = j + 1) begin : assign_s0
+                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j];
+                end
+            end
+        end
+
+        for (b = 0; b < 12; b = b + 1) begin : gen_state_1
+            if (b % 3 == 1) begin : state_1
+                for (j = 0; j < 30; j = j + 1) begin : assign_s1
+                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 1];
+                end
+                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
+                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 31];
+            end
+        end
+
+        for (b = 0; b < 12; b = b + 1) begin : gen_state_2
+            if (b % 3 == 2) begin : state_2
+                for (j = 0; j < 30; j = j + 1) begin : assign_s2
+                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 2];
+                end
+                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
+                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 1];
+            end
+        end
+    endgenerate
+
+    genvar gp1, cp1, tp1;
+    generate
+        for (gp1 = 0; gp1 < 12; gp1++) begin : gen_ps1_row
+            for (cp1 = 0; cp1 < 32; cp1++) begin : gen_ps1_col
+                for (tp1 = 0; tp1 < 9; tp1++) begin : gen_ps1_tap
+                    assign pixels_s1[gp1][cp1][tp1] = p_imag[(gp1 * 32) + cp1];
+                end
+            end
+        end
+    endgenerate
+
+    mem_mapping #(
+        .FRAME_NO       (FRAME_NO),
+        .FRAME_NO_WIDTH (FRAME_NO_WIDTH),
+        .MEM_WORD       (3200)
+    ) u_mem_mapping (
+        .clk    (clk),
+        .arst_n (arst_n),
+        .frame  (frame),
+        .mem    (spike_mem_data),
+        .fil_in (fil_in)
+    );
+
+    genvar fi;
+    generate
+        for (fi = 0; fi < 32; fi++) begin : gen_frame_mapping
+            frame_input_mapping u_frame_map (
+                .frame (frame[2:0]),
+                .in    (fil_in[fi]),
+                .conv  (conv_windows[fi])
+            );
+        end
+    endgenerate
+
+    genvar gp2, cp2, tp2;
+    generate
+        for (gp2 = 0; gp2 < 12; gp2++) begin : gen_ps2_row
+            for (cp2 = 0; cp2 < 32; cp2++) begin : gen_ps2_col
+                for (tp2 = 0; tp2 < 9; tp2++) begin : gen_ps2_tap
+                    assign pixels_s2[gp2][cp2][tp2] =
+                        {{(PIXEL_W-1){conv_windows[cp2][gp2][tp2]}},
+                                      conv_windows[cp2][gp2][tp2]};
+                end
+            end
+        end
+    endgenerate
+
+    genvar sm;
+    generate
+        for (sm = 0; sm < 1024; sm++) begin : gen_stage3_mem_unpack
+            assign stage3_mem[sm] = spike_mem_data[sm];
+        end
+    endgenerate
+
+    bin_muxing_stage2 u_stage3_bin_mux (
+        .din  (stage3_mem),
+        .dout (stage3_windows)
+    );
+
+    genvar win3, ch3, tap3;
+    generate
+        for (win3 = 0; win3 < 4; win3++) begin : gen_ps3_window
+            for (ch3 = 0; ch3 < 32; ch3++) begin : gen_ps3_channel
+                for (tap3 = 0; tap3 < 9; tap3++) begin : gen_ps3_tap
+                    assign pixels_s3[(win3 * 2)    ][ch3][tap3] =
+                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3]}},
+                                      stage3_windows[tap3][win3][ch3]};
+
+                    assign pixels_s3[(win3 * 2) + 1][ch3][tap3] =
+                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3 + 32]}},
+                                      stage3_windows[tap3][win3][ch3 + 32]};
+                end
+            end
+        end
+    endgenerate
+
+    genvar zrow3, zch3, ztap3;
+    generate
+        for (zrow3 = 8; zrow3 < 12; zrow3++) begin : gen_ps3_zero_row
+            for (zch3 = 0; zch3 < 32; zch3++) begin : gen_ps3_zero_channel
+                for (ztap3 = 0; ztap3 < 9; ztap3++) begin : gen_ps3_zero_tap
+                    assign pixels_s3[zrow3][zch3][ztap3] = '0;
+                end
+            end
+        end
+    endgenerate
+
+    genvar gm, cm, tm;
+    generate
+        for (gm = 0; gm < 12; gm++) begin : gen_pmux_row
+            for (cm = 0; cm < 32; cm++) begin : gen_pmux_col
+                for (tm = 0; tm < 9; tm++) begin : gen_pmux_tap
+                    always_comb begin
+                        case (src_sel)
+                            2'b00:   pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];
+                            2'b01:   pixels_mapped[gm][cm][tm] = pixels_s2[gm][cm][tm];
+                            2'b10:   pixels_mapped[gm][cm][tm] = pixels_s3[gm][cm][tm];
+                            default: pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];
+                        endcase
+                    end
+                end
+            end
+        end
+    endgenerate
+
+endmodule

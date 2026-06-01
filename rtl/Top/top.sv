@@ -126,51 +126,13 @@ module deep_snn_top #(
         .add_weight  (add_weight_param)
     );
 
-    logic signed [PIXEL_W-1:0] in_mem [0:383];
-
-    logic signed [PIXEL_W-1:0] p_imag [0:383];
-
-    logic signed [PIXEL_W-1:0] pixels_s1 [0:11][0:31][0:8];
-
-    logic fil_in [31:0][39:0];
-
-    logic conv_windows [31:0][11:0][8:0];
-
-    logic signed [PIXEL_W-1:0] pixels_s2 [0:11][0:31][0:8];
-
-    logic stage3_mem [0:1023];
-
-    logic stage3_windows [0:8][0:3][0:63];
-
-    logic signed [PIXEL_W-1:0] pixels_s3 [0:11][0:31][0:8];
-
     logic signed [PIXEL_W-1:0] pixels_mapped [0:11][0:31][0:8];
-
-    logic [PIXEL_W-1:0] stage1_weights [3456];   // 5x5 kernels, decomposed
-    logic [PIXEL_W-1:0] stage2_weights [3456];   // 3x3 kernels, 32-channel
-    logic [PIXEL_W-1:0] stage3_weights [3456];   // 3x3 kernels, 64-channel
-
-    logic [PIXEL_W-1:0] active_weights [3456];
-
     logic signed [PIXEL_W-1:0] weights_mapped [0:11][0:31][0:8];
-
-    logic [MAC_OUT_W-1:0] mac_raw [0:11][0:31];
-
     logic signed [DATA_WIDTH-1:0] mac_to_connect [0:11][0:31];
-
     logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] shb_bus [0:N_SHAABAN-1];
-
     logic [0:31] shaaban_spike_bus [0:31];
 
-    logic [0:31] mem_mapped_internal [0:3199];
     assign spike_mem_wr_en = enable && (|ctrl_mem_enable);
-
-    genvar wb;
-    generate
-        for (wb = 0; wb < 3200; wb++) begin : gen_spike_mem_wr_data
-            assign spike_mem_wr_data[wb] = mem_mapped_internal[wb][0];
-        end
-    endgenerate
 
     spike_mem #(
         .MEM_WORD   (3200),
@@ -187,212 +149,39 @@ module deep_snn_top #(
         .rd_data    (spike_mem_data)
     );
 
-    genvar m;
-    generate
-        for (m = 0; m < 384; m++) begin : gen_inmem
-            assign in_mem[m] = $signed(pixel_mem_data[m*PIXEL_W +: PIXEL_W]);
-        end
-    endgenerate
-
-    genvar b, j;
-    generate
-
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_0
-            if (b % 3 == 0) begin : state_0
-                for (j = 0; j < 32; j = j + 1) begin : assign_s0
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j];
-                end
-            end
-        end
-
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_1
-            if (b % 3 == 1) begin : state_1
-                for (j = 0; j < 30; j = j + 1) begin : assign_s1
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 1];
-                end
-                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];       // wrap: skipped element
-                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 31];  // seed: 1 orphan remains
-            end
-        end
-
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_2
-            if (b % 3 == 2) begin : state_2
-                for (j = 0; j < 30; j = j + 1) begin : assign_s2
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 2];
-                end
-                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];       // wrap: skipped[0]
-                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 1];   // wrap: skipped[1]
-            end
-        end
-
-    endgenerate
-
-    genvar gp1, cp1, tp1;
-    generate
-        for (gp1 = 0; gp1 < 12; gp1++) begin : gen_ps1_row
-            for (cp1 = 0; cp1 < 32; cp1++) begin : gen_ps1_col
-                for (tp1 = 0; tp1 < 9; tp1++) begin : gen_ps1_tap
-                    assign pixels_s1[gp1][cp1][tp1] = p_imag[(gp1 * 32) + cp1];
-                end
-            end
-        end
-    endgenerate
-
-    mem_mapping #(
+    top_pixel_source_mapper #(
+        .PIXEL_W        (PIXEL_W),
         .FRAME_NO       (FRAME_NO),
-        .FRAME_NO_WIDTH (FRAME_NO_WIDTH),
-        .MEM_WORD       (3200)
-    ) u_mem_mapping (
-        .clk    (clk),
-        .arst_n (arst_n),
-        .frame  (frame),
-        .mem    (spike_mem_data),
-        .fil_in (fil_in)
+        .FRAME_NO_WIDTH (FRAME_NO_WIDTH)
+    ) u_pixel_source_mapper (
+        .clk            (clk),
+        .arst_n         (arst_n),
+        .src_sel        (src_sel),
+        .frame          (frame),
+        .pixel_mem_data (pixel_mem_data),
+        .spike_mem_data (spike_mem_data),
+        .pixels_mapped  (pixels_mapped)
     );
 
-    genvar fi;
-    generate
-        for (fi = 0; fi < 32; fi++) begin : gen_frame_mapping
-            frame_input_mapping u_frame_map (
-                .frame (frame[2:0]),
-                .in    (fil_in[fi]),
-                .conv  (conv_windows[fi])
-            );
-        end
-    endgenerate
-
-    genvar gp2, cp2, tp2;
-    generate
-        for (gp2 = 0; gp2 < 12; gp2++) begin : gen_ps2_row
-            for (cp2 = 0; cp2 < 32; cp2++) begin : gen_ps2_col
-                for (tp2 = 0; tp2 < 9; tp2++) begin : gen_ps2_tap
-                    assign pixels_s2[gp2][cp2][tp2] =
-                        {{(PIXEL_W-1){conv_windows[cp2][gp2][tp2]}},  // sign replicate
-                                      conv_windows[cp2][gp2][tp2]};   // LSB
-                end
-            end
-        end
-    endgenerate
-
-    genvar sm;
-    generate
-        for (sm = 0; sm < 1024; sm++) begin : gen_stage3_mem_unpack
-            assign stage3_mem[sm] = spike_mem_data[sm];
-        end
-    endgenerate
-
-    bin_muxing_stage2 u_stage3_bin_mux (
-        .din  (stage3_mem),
-        .dout (stage3_windows)
+    top_weight_mapper #(
+        .PIXEL_W (PIXEL_W)
+    ) u_weight_mapper (
+        .src_sel        (src_sel),
+        .conv2_filter   (conv2_filter),
+        .conv3_filter   (conv3_filter),
+        .weights_mapped (weights_mapped)
     );
 
-    genvar win3, ch3, tap3;
-    generate
-        for (win3 = 0; win3 < 4; win3++) begin : gen_ps3_window
-            for (ch3 = 0; ch3 < 32; ch3++) begin : gen_ps3_channel
-                for (tap3 = 0; tap3 < 9; tap3++) begin : gen_ps3_tap
-                    assign pixels_s3[(win3 * 2)    ][ch3][tap3] =
-                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3]}},
-                                      stage3_windows[tap3][win3][ch3]};
-
-                    assign pixels_s3[(win3 * 2) + 1][ch3][tap3] =
-                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3 + 32]}},
-                                      stage3_windows[tap3][win3][ch3 + 32]};
-                end
-            end
-        end
-    endgenerate
-
-    genvar zrow3, zch3, ztap3;
-    generate
-        for (zrow3 = 8; zrow3 < 12; zrow3++) begin : gen_ps3_zero_row
-            for (zch3 = 0; zch3 < 32; zch3++) begin : gen_ps3_zero_channel
-                for (ztap3 = 0; ztap3 < 9; ztap3++) begin : gen_ps3_zero_tap
-                    assign pixels_s3[zrow3][zch3][ztap3] = '0;
-                end
-            end
-        end
-    endgenerate
-
-    genvar gm, cm, tm;
-    generate
-        for (gm = 0; gm < 12; gm++) begin : gen_pmux_row
-            for (cm = 0; cm < 32; cm++) begin : gen_pmux_col
-                for (tm = 0; tm < 9; tm++) begin : gen_pmux_tap
-                    always_comb begin
-                        case (src_sel)
-                            2'b00:   pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];  // Stage 1
-                            2'b01:   pixels_mapped[gm][cm][tm] = pixels_s2[gm][cm][tm];  // Stage 2
-                            2'b10:   pixels_mapped[gm][cm][tm] = pixels_s3[gm][cm][tm];  // Stage 3
-                            default: pixels_mapped[gm][cm][tm] = pixels_s1[gm][cm][tm];
-                        endcase
-                    end
-                end
-            end
-        end
-    endgenerate
-
-    CONV1_W_MAP_OPT u_w1 (
-        .conv9_in (stage1_weights)
+    top_conv9_array #(
+        .PIXEL_W    (PIXEL_W),
+        .MAC_OUT_W  (MAC_OUT_W),
+        .DATA_WIDTH (DATA_WIDTH)
+    ) u_conv9_array (
+        .clk            (clk),
+        .pixels_mapped  (pixels_mapped),
+        .weights_mapped (weights_mapped),
+        .mac_to_connect (mac_to_connect)
     );
-
-    CONV2_W_MAP_OPT u_w2 (
-        .filter   (conv2_filter),
-        .conv9_in (stage2_weights)
-    );
-
-    CONV3_W_MAP_OPT u_w3 (
-        .filter   (conv3_filter),
-        .conv9_in (stage3_weights)
-    );
-
-    always_comb begin
-        case (src_sel)
-            2'b00:   active_weights = stage1_weights;   // Stage 1
-            2'b01:   active_weights = stage2_weights;   // Stage 2
-            2'b10:   active_weights = stage3_weights;   // Stage 3
-            default: active_weights = stage2_weights;   // safe default
-        endcase
-    end
-
-    genvar gw, cw, tw;
-    generate
-        for (gw = 0; gw < 12; gw++) begin : gen_wmap_row
-            for (cw = 0; cw < 32; cw++) begin : gen_wmap_col
-                for (tw = 0; tw < 9; tw++) begin : gen_wmap_tap
-                    assign weights_mapped[gw][cw][tw] =
-                        $signed(active_weights[(gw * 32 + cw) * 9 + tw]);
-                end
-            end
-        end
-    endgenerate
-
-    genvar g, c;
-    generate
-        for (g = 0; g < 12; g++) begin : gen_conv_row
-            for (c = 0; c < 32; c++) begin : gen_conv_col
-                conv9 #(
-                    .PIXEL_W (PIXEL_W),   // 18-bit Q7.10 signed inputs
-                    .PROD_W  (36),        // 18x18 product width
-                    .OUT_W   (MAC_OUT_W)  // 40-bit accumulator
-                ) u_conv (
-                    .CLK       (clk),
-                    .P         (pixels_mapped[g][c]),   // 9 pixel taps
-                    .Q         (weights_mapped[g][c]),  // 9 weight taps
-                    .Pixel_Out (mac_raw[g][c])          // 40-bit MAC result
-                );
-            end
-        end
-    endgenerate
-
-    genvar g2, c2;
-    generate
-        for (g2 = 0; g2 < 12; g2++) begin : gen_trunc_row
-            for (c2 = 0; c2 < 32; c2++) begin : gen_trunc_col
-                assign mac_to_connect[g2][c2] = mac_raw[g2][c2][DATA_WIDTH-1:0];
-            end
-        end
-    endgenerate
 
     adder_tree_shaaban_connect u_connect (
         .clk          (clk),
@@ -402,32 +191,25 @@ module deep_snn_top #(
         .shb_conv_bus (shb_bus)         // 32 packed Shaaban input buses
     );
 
-    genvar s;
-    generate
-        for (s = 0; s < N_SHAABAN; s++) begin : gen_shaaban_array
-            shaban_unit_top #(
-                .DATA_WIDTH         (DATA_WIDTH),        // 18-bit data
-                .conv_bias_relu_num (INPUTS_PER_SHB),    // 4 bias+relu units
-                .batch_norm_num     (INPUTS_PER_SHB),    // 4 batch norm units
-                .pool_num           (2)                  // 2:1 max pool stages
-            ) u_shb (
-                .clk        (clk),
-                .rst        (rst),
-                .conv_in    (shb_bus[s]),      // 4 packed 18-bit inputs
-                .conv_bias  (conv_bias_param[s]),
-                .mult_wight (mult_weight_param[s]),
-                .add_wight  (add_weight_param[s]),
-                .spike      (spike_out[s])     // 1-bit LIF output
-            );
+    top_shaaban_array #(
+        .DATA_WIDTH     (DATA_WIDTH),
+        .N_SHAABAN      (N_SHAABAN),
+        .INPUTS_PER_SHB (INPUTS_PER_SHB)
+    ) u_shaaban_array (
+        .clk                 (clk),
+        .rst                 (rst),
+        .shb_bus             (shb_bus),
+        .conv_bias_param     (conv_bias_param),
+        .mult_weight_param   (mult_weight_param),
+        .add_weight_param    (add_weight_param),
+        .spike_out           (spike_out),
+        .shaaban_spike_bus   (shaaban_spike_bus)
+    );
 
-            assign shaaban_spike_bus[s] = {32{spike_out[s]}};
-        end
-    endgenerate
-
-    mem_maping_1_2 u_writeback (
-        .stage_sel   (stage_sel),           // layout selector (0=Stage1, 1=Stage2)
-        .shaaban_out (shaaban_spike_bus),    // 32 x 32-bit spike words
-        .mem_mapped  (mem_mapped_internal)  // 3200 x 32-bit output (internal only)
+    top_spike_writeback u_spike_writeback (
+        .stage_sel           (stage_sel),
+        .shaaban_spike_bus   (shaaban_spike_bus),
+        .spike_mem_wr_data   (spike_mem_wr_data)
     );
 
     always_ff @(posedge clk or negedge arst_n) begin
@@ -498,11 +280,12 @@ module deep_snn_top #(
         .busy   (fc2_busy)
     );
 
-    genvar logit_idx;
-    generate
-        for (logit_idx = 0; logit_idx < FC2_OUTPUTS; logit_idx++) begin : gen_class_logits
-            assign class_logits[(logit_idx * DATA_WIDTH) +: DATA_WIDTH] = fc2_out[logit_idx];
-        end
-    endgenerate
+    top_class_logits_packer #(
+        .DATA_WIDTH (DATA_WIDTH),
+        .N_OUTPUTS  (FC2_OUTPUTS)
+    ) u_class_logits_packer (
+        .fc_out       (fc2_out),
+        .class_logits (class_logits)
+    );
 
 endmodule

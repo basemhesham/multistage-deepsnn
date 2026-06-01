@@ -113,6 +113,12 @@ set source_files [list \
     [file join $repo_root "rtl" "Top" "spike_mem.sv"] \
     [file join $repo_root "rtl" "Top" "bias_bn_params.sv"] \
     [file join $repo_root "rtl" "Top" "global_average_pool.sv"] \
+    [file join $repo_root "rtl" "Top" "top_pixel_source_mapper.sv"] \
+    [file join $repo_root "rtl" "Top" "top_weight_mapper.sv"] \
+    [file join $repo_root "rtl" "Top" "top_conv9_array.sv"] \
+    [file join $repo_root "rtl" "Top" "top_shaaban_array.sv"] \
+    [file join $repo_root "rtl" "Top" "top_spike_writeback.sv"] \
+    [file join $repo_root "rtl" "Top" "top_class_logits_packer.sv"] \
     [file join $classifier_dir "fc1_layer.sv"] \
     [file join $classifier_dir "fc2_layer.sv"] \
     [file join $repo_root "rtl" "Top" "top.sv"] \
