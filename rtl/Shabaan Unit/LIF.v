@@ -12,9 +12,9 @@ wire signed [DATA_WIDTH-1:0] mux_out , mem_leak , new_mem , mem_input_add_trnuc 
 wire signed [DATA_WIDTH:0] mem_input_add ; // 19 bits
 reg spike_int ; // internal spike ;
 
-always @(posedge clk or negedge rst)
+always @(posedge clk)
 begin
- if(!rst)
+ if(rst)
   begin
    mem_reg <= 'd0;
    spike_reg<= 1'b0;

@@ -149,5 +149,5 @@ Create project and run synthesis:
 - The generated project uses staged copies under `build/vivado/src`.
 - Do not edit the staged files directly; edit files under `rtl/`.
 - Rerun the TCL script after RTL changes so Vivado sees the updated source set.
-- The script currently builds only the incomplete top datapath, not the future
-  controller, BRAM integration, or classifier head.
+- The script builds the current top datapath, including the controller,
+  BRAM-style local memories, GAP, classifier head, and timing constraints.

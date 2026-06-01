@@ -135,7 +135,7 @@ The design targets the **Xilinx Virtex UltraScale+ XCVU11P** in the `flga2577-3-
 
 | Resource | XCVU11P |
 |----------|:-------:|
-| DSP48E2 Slices | **4,638** |
+| DSP48E2 Slices | **9,216 total / 4,638 project budget** |
 | Block RAM Tiles (36 Kb each) | **2,016** |
 | Block RAM Total Capacity | **70.9 Mb** |
 | UltraRAM Blocks (288 Kb each) | **640** |
@@ -157,7 +157,7 @@ The **DSP48E2 slice** is the central resource in this design. Virtually all mult
 | **Pre-adder port (D)** | Adds a third input before the multiplier — true 3-input adder in one DSP and one pipeline stage |
 | **Cascade bus** | Chains DSP slice outputs directly to adjacent slices without routing fabric, forming efficient cascaded MAC chains |
 
-The 4,638 DSP48E2 slices provide sufficient headroom for Stage 1 (the most demanding stage), which consumes **4,000 DSPs — 98.1% of the available budget**.
+The device contains 9,216 DSP48E2 slices. The project budget allows the accelerator to use up to 4,638 DSP48E2 slices, providing sufficient headroom for Stage 1 (the most demanding stage), which consumes **4,000 DSPs — 98.1% of the allowed budget**.
 
 <div align="center">
 <img width="689" height="443" alt="DSP Resource Usage" src="https://github.com/user-attachments/assets/b76843a0-f010-40c9-b490-559f95578cb0" />
@@ -794,7 +794,7 @@ With all 32 filters computing simultaneously, Stage 1 produces **32 output pixel
 | Shaaban units active | 32 |
 | DSPs per Shaaban unit | 13 |
 | Shaaban DSPs total | 32 × 13 = **416** |
-| **Total DSPs — Stage 1** | **4,000 (98.1% of 4,638)** |
+| **Total DSPs — Stage 1** | **4,000 (98.1% of the 4,638 allowed budget)** |
 
 ---
 
@@ -1247,4 +1247,4 @@ testbench files.
 | Stage 3 | 2,304 | 132 | 13 (1 active) | **2,449** | 60.1% |
 | **Circuit Total** | — | — | — | **4,076** | **87.9%** |
 
-**Available DSP48E2 slices on XCVU11P: 4,638**
+**DSP48E2 budget used for this project: 4,638 allowed slices out of 9,216 total device slices**

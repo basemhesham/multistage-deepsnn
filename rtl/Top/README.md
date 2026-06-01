@@ -145,14 +145,15 @@ Current synthesized DSP count from
 | 12 adder trees x 16 DSPs | 192 |
 | 8 external correction adders | 8 |
 | 32 Shaaban units x 4 Batch_Norm DSPs | 128 |
-| **Total** | **3784** |
+| FC1/FC2 inferred MAC DSPs | 24 |
+| **Total** | **3808** |
 
 The utilization report shows:
 
 ```text
-DSPs           3784
-DSP48E2 only   3784
-Primitive DSP48E2 3784 Arithmetic
+DSPs           3808
+DSP48E2 only   3808
+Primitive DSP48E2 3808 Arithmetic
 ```
 
 The synthesis log also shows Vivado synthesizing `DSP48E2` from:
