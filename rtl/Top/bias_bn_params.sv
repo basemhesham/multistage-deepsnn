@@ -57,7 +57,7 @@ module bias_bn_params #(
                 2'b01: begin
                     if (shb < 3) begin
                         mult_weight[shb] = bn2_weight_table.BN2_WEIGHTS[conv2_filter];
-                        add_weight[shb]  = bn2_bias_table.BN2_WEIGHTS[conv2_filter];
+                        add_weight[shb]  = bn2_bias_table.BN2_BIAS[conv2_filter];
                     end
                 end
 

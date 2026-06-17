@@ -24,6 +24,13 @@ module deep_snn_top #(
     input  logic [5:0]                    pixel_mem_wr_addr,
     input  logic [(384*PIXEL_W)-1:0]      pixel_mem_wr_data,
 
+`ifdef SIM
+    input  logic                          sim_pixels_override,
+    input  logic [(12*32*9*PIXEL_W)-1:0]  sim_pixels,
+    input  logic                          sim_pixel_mem_override,
+    input  logic [(384*PIXEL_W)-1:0]       sim_pixel_mem_data,
+`endif
+
     output logic [N_SHAABAN-1:0]          spike_out,
     output logic [(4*DATA_WIDTH)-1:0]      class_logits,
     output logic                          classifier_done,
@@ -57,6 +64,7 @@ module deep_snn_top #(
     logic                          snn_done_d;
     logic                          spike_mem_wr_en;
     logic [3199:0]                 spike_mem_wr_data;
+    logic [(384*PIXEL_W)-1:0]      pixel_mem_raw;
     logic [(384*PIXEL_W)-1:0]      pixel_mem_data;
     logic [3199:0]                 spike_mem_data;
     logic signed [DATA_WIDTH-1:0]  conv_bias_param [0:N_SHAABAN-1];
@@ -109,8 +117,19 @@ module deep_snn_top #(
         .wr_addr (pixel_mem_wr_addr),
         .wr_data (pixel_mem_wr_data),
         .rd_addr (ctrl_rd_mem_adderss),
-        .rd_data (pixel_mem_data)
+        .rd_data (pixel_mem_raw)
     );
+
+`ifdef SIM
+    always_comb begin
+        if (sim_pixel_mem_override === 1'b1)
+            pixel_mem_data = sim_pixel_mem_data;
+        else
+            pixel_mem_data = pixel_mem_raw;
+    end
+`else
+    assign pixel_mem_data = pixel_mem_raw;
+`endif
 
     bias_bn_params #(
         .DATA_WIDTH     (DATA_WIDTH),
@@ -127,6 +146,7 @@ module deep_snn_top #(
     );
 
     logic signed [PIXEL_W-1:0] pixels_mapped [0:11][0:31][0:8];
+    logic signed [PIXEL_W-1:0] pixels_to_conv [0:11][0:31][0:8];
     logic signed [PIXEL_W-1:0] weights_mapped [0:11][0:31][0:8];
     logic signed [DATA_WIDTH-1:0] mac_to_connect [0:11][0:31];
     logic signed [(INPUTS_PER_SHB*DATA_WIDTH)-1:0] shb_bus [0:N_SHAABAN-1];
@@ -178,10 +198,39 @@ module deep_snn_top #(
         .DATA_WIDTH (DATA_WIDTH)
     ) u_conv9_array (
         .clk            (clk),
-        .pixels_mapped  (pixels_mapped),
+        .pixels_mapped  (pixels_to_conv),
         .weights_mapped (weights_mapped),
         .mac_to_connect (mac_to_connect)
     );
+
+    genvar sim_group, sim_channel, sim_tap;
+    generate
+        for (sim_group = 0; sim_group < 12; sim_group++) begin : gen_sim_group
+            for (sim_channel = 0;
+                 sim_channel < 32;
+                 sim_channel++) begin : gen_sim_channel
+                for (sim_tap = 0; sim_tap < 9; sim_tap++) begin : gen_sim_tap
+                    localparam int SIM_PIXEL_INDEX =
+                        (((sim_group * 32) + sim_channel) * 9) + sim_tap;
+`ifdef SIM
+                    always_comb begin
+                        if (sim_pixels_override === 1'b1)
+                            pixels_to_conv[sim_group][sim_channel][sim_tap] =
+                                $signed(sim_pixels[
+                                    SIM_PIXEL_INDEX*PIXEL_W +: PIXEL_W
+                                ]);
+                        else
+                            pixels_to_conv[sim_group][sim_channel][sim_tap] =
+                                pixels_mapped[sim_group][sim_channel][sim_tap];
+                    end
+`else
+                    assign pixels_to_conv[sim_group][sim_channel][sim_tap] =
+                        pixels_mapped[sim_group][sim_channel][sim_tap];
+`endif
+                end
+            end
+        end
+    endgenerate
 
     adder_tree_shaaban_connect u_connect (
         .clk          (clk),
@@ -207,7 +256,7 @@ module deep_snn_top #(
     );
 
     top_spike_writeback u_spike_writeback (
-        .stage_sel           (stage_sel),
+        .stage               (src_sel),
         .shaaban_spike_bus   (shaaban_spike_bus),
         .spike_mem_wr_data   (spike_mem_wr_data)
     );

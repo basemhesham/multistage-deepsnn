@@ -2,6 +2,7 @@
 
 module top_pixel_source_mapper #(
     parameter int PIXEL_W        = 18,
+    parameter int FRAC_BITS      = 9,
     parameter int FRAME_NO       = 6,
     parameter int FRAME_NO_WIDTH = 3
 )(
@@ -15,7 +16,6 @@ module top_pixel_source_mapper #(
 );
 
     logic signed [PIXEL_W-1:0] in_mem [0:383];
-    logic signed [PIXEL_W-1:0] p_imag [0:383];
     logic signed [PIXEL_W-1:0] pixels_s1 [0:11][0:31][0:8];
     logic fil_in [31:0][39:0];
     logic conv_windows [31:0][11:0][8:0];
@@ -31,43 +31,75 @@ module top_pixel_source_mapper #(
         end
     endgenerate
 
-    genvar b, j;
-    generate
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_0
-            if (b % 3 == 0) begin : state_0
-                for (j = 0; j < 32; j = j + 1) begin : assign_s0
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j];
-                end
-            end
+    function automatic int stage1_stream_index(
+        input int block,
+        input int lane
+    );
+        begin
+            case (block % 3)
+                0: stage1_stream_index = (block * 32) + lane;
+                1: stage1_stream_index = (block * 32) +
+                                         ((lane < 30) ? lane + 1 :
+                                          (lane == 30) ? 0 : 31);
+                default:
+                   stage1_stream_index = (block * 32) +
+                                         ((lane < 30) ? lane + 2 : lane - 30);
+            endcase
         end
+    endfunction
 
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_1
-            if (b % 3 == 1) begin : state_1
-                for (j = 0; j < 30; j = j + 1) begin : assign_s1
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 1];
-                end
-                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
-                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 31];
-            end
-        end
+    function automatic int stage1_patch_index(
+        input int stream_index,
+        input int tap
+    );
+        int conv_output;
+        int chunk;
+        int padded_kernel_index;
+        int kernel_index;
+        int kernel_row;
+        int kernel_col;
+        int window;
+        int window_row;
+        int window_col;
+        begin
+            conv_output        = stream_index / 3;
+            chunk              = stream_index % 3;
+            padded_kernel_index = (chunk * 9) + tap;
 
-        for (b = 0; b < 12; b = b + 1) begin : gen_state_2
-            if (b % 3 == 2) begin : state_2
-                for (j = 0; j < 30; j = j + 1) begin : assign_s2
-                    assign p_imag[(b * 32) + j] = in_mem[(b * 32) + j + 2];
-                end
-                assign p_imag[(b * 32) + 30] = in_mem[(b * 32)];
-                assign p_imag[(b * 32) + 31] = in_mem[(b * 32) + 1];
+            if (padded_kernel_index == 9 || padded_kernel_index == 18) begin
+                kernel_index = 0;
+            end else if (padded_kernel_index > 18) begin
+                kernel_index = padded_kernel_index - 2;
+            end else if (padded_kernel_index > 9) begin
+                kernel_index = padded_kernel_index - 1;
+            end else begin
+                kernel_index = padded_kernel_index;
             end
+
+            // CONV1 weights are column-major. Four adjacent outputs share
+            // one row-major 6x6 patch stored in pixel_mem_data[0:35].
+            kernel_row = kernel_index % 5;
+            kernel_col = kernel_index / 5;
+            window     = conv_output % 4;
+            window_row = window / 2;
+            window_col = window % 2;
+
+            stage1_patch_index =
+                ((kernel_row + window_row) * 6) + kernel_col + window_col;
         end
-    endgenerate
+    endfunction
 
     genvar gp1, cp1, tp1;
     generate
         for (gp1 = 0; gp1 < 12; gp1++) begin : gen_ps1_row
             for (cp1 = 0; cp1 < 32; cp1++) begin : gen_ps1_col
                 for (tp1 = 0; tp1 < 9; tp1++) begin : gen_ps1_tap
-                    assign pixels_s1[gp1][cp1][tp1] = p_imag[(gp1 * 32) + cp1];
+                    localparam int STREAM_INDEX =
+                        stage1_stream_index(gp1, cp1);
+                    localparam int PATCH_INDEX =
+                        stage1_patch_index(STREAM_INDEX, tp1);
+
+                    assign pixels_s1[gp1][cp1][tp1] = in_mem[PATCH_INDEX];
                 end
             end
         end
@@ -102,8 +134,9 @@ module top_pixel_source_mapper #(
             for (cp2 = 0; cp2 < 32; cp2++) begin : gen_ps2_col
                 for (tp2 = 0; tp2 < 9; tp2++) begin : gen_ps2_tap
                     assign pixels_s2[gp2][cp2][tp2] =
-                        {{(PIXEL_W-1){conv_windows[cp2][gp2][tp2]}},
-                                      conv_windows[cp2][gp2][tp2]};
+                        {{(PIXEL_W-FRAC_BITS-1){1'b0}},
+                          conv_windows[cp2][gp2][tp2],
+                          {FRAC_BITS{1'b0}}};
                 end
             end
         end
@@ -127,12 +160,14 @@ module top_pixel_source_mapper #(
             for (ch3 = 0; ch3 < 32; ch3++) begin : gen_ps3_channel
                 for (tap3 = 0; tap3 < 9; tap3++) begin : gen_ps3_tap
                     assign pixels_s3[(win3 * 2)    ][ch3][tap3] =
-                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3]}},
-                                      stage3_windows[tap3][win3][ch3]};
+                        {{(PIXEL_W-FRAC_BITS-1){1'b0}},
+                          stage3_windows[tap3][win3][ch3],
+                          {FRAC_BITS{1'b0}}};
 
                     assign pixels_s3[(win3 * 2) + 1][ch3][tap3] =
-                        {{(PIXEL_W-1){stage3_windows[tap3][win3][ch3 + 32]}},
-                                      stage3_windows[tap3][win3][ch3 + 32]};
+                        {{(PIXEL_W-FRAC_BITS-1){1'b0}},
+                          stage3_windows[tap3][win3][ch3 + 32],
+                          {FRAC_BITS{1'b0}}};
                 end
             end
         end

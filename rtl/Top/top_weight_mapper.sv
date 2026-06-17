@@ -37,13 +37,45 @@ module top_weight_mapper #(
         endcase
     end
 
+    function automatic int stage1_stream_index(
+        input int block,
+        input int lane
+    );
+        begin
+            case (block % 3)
+                0: stage1_stream_index = (block * 32) + lane;
+                1: stage1_stream_index = (block * 32) +
+                                         ((lane < 30) ? lane + 1 :
+                                          (lane == 30) ? 0 : 31);
+                default:
+                   stage1_stream_index = (block * 32) +
+                                         ((lane < 30) ? lane + 2 : lane - 30);
+            endcase
+        end
+    endfunction
+
     genvar gw, cw, tw;
     generate
         for (gw = 0; gw < 12; gw++) begin : gen_wmap_row
             for (cw = 0; cw < 32; cw++) begin : gen_wmap_col
                 for (tw = 0; tw < 9; tw++) begin : gen_wmap_tap
-                    assign weights_mapped[gw][cw][tw] =
-                        $signed(active_weights[(gw * 32 + cw) * 9 + tw]);
+                    localparam int PHYSICAL_INDEX = (gw * 32) + cw;
+                    localparam int STAGE1_INDEX =
+                        stage1_stream_index(gw, cw);
+
+                    always_comb begin
+                        if (src_sel == 2'b00) begin
+                            weights_mapped[gw][cw][tw] =
+                                $signed(stage1_weights[
+                                    (STAGE1_INDEX * 9) + tw
+                                ]);
+                        end else begin
+                            weights_mapped[gw][cw][tw] =
+                                $signed(active_weights[
+                                    (PHYSICAL_INDEX * 9) + tw
+                                ]);
+                        end
+                    end
                 end
             end
         end

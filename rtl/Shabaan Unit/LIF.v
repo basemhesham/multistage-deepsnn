@@ -1,4 +1,4 @@
-module LIF #(parameter DATA_WIDTH = 18 , parameter signed threshold = 18'd5 , parameter signed zero = 18'd0) (
+module LIF #(parameter DATA_WIDTH = 18 , parameter signed threshold = 18'd512 , parameter signed zero = 18'd0) (
 input wire clk,
 input wire rst,
 input wire signed [DATA_WIDTH-1:0] in_pool ,
@@ -32,7 +32,7 @@ end
 assign mux_out = spike_reg? threshold : zero;
 assign mem_leak = mem_reg >>> 1 ; // step 1 : decay  (assume beta = 0.5)  means divided by 2 
 assign mem_input_add = mem_leak + in_pool;
-assign mem_input_add_trnuc = mem_input_add[DATA_WIDTH:1];
+assign mem_input_add_trnuc = mem_input_add[DATA_WIDTH-1:0];
 assign new_mem = mem_input_add_trnuc - mux_out ;
 
 always @(*)

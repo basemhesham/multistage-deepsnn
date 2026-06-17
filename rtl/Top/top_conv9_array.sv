@@ -3,7 +3,8 @@
 module top_conv9_array #(
     parameter int PIXEL_W    = 18,
     parameter int MAC_OUT_W  = 40,
-    parameter int DATA_WIDTH = 18
+    parameter int DATA_WIDTH = 18,
+    parameter int FRAC_BITS  = 9
 )(
     input  logic                         clk,
     input  logic signed [PIXEL_W-1:0]    pixels_mapped  [0:11][0:31][0:8],
@@ -35,7 +36,8 @@ module top_conv9_array #(
     generate
         for (g2 = 0; g2 < 12; g2++) begin : gen_trunc_row
             for (c2 = 0; c2 < 32; c2++) begin : gen_trunc_col
-                assign mac_to_connect[g2][c2] = mac_raw[g2][c2][DATA_WIDTH-1:0];
+                assign mac_to_connect[g2][c2] =
+                    $signed(mac_raw[g2][c2]) >>> FRAC_BITS;
             end
         end
     endgenerate

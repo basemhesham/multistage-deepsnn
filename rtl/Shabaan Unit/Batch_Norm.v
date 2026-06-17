@@ -1,12 +1,13 @@
 `timescale 1ns / 1ps
 // =============================================================================
 // Batch_Norm.v - Batch normalisation using an explicit DSP48E2 primitive
-// Operation: P = (Batch_Norm_in * mult_wight) + add_wight
-// Output: bits [36:19] of the 48-bit MAC result
+// Operation: P = (Batch_Norm_in * mult_wight) + (add_wight << 9)
+// Output: Q8.9 bits [26:9] of the 48-bit MAC result
 // =============================================================================
 
 module Batch_Norm #(
-    parameter DATA_WIDTH = 18
+    parameter DATA_WIDTH = 18,
+    parameter FRAC_BITS  = 9
 )(
     input  wire signed [DATA_WIDTH-1:0] Batch_Norm_in,
     input  wire signed [DATA_WIDTH-1:0] mult_wight,
@@ -20,13 +21,15 @@ module Batch_Norm #(
     wire signed [PRODUCT_WIDTH-1:0] product_full;
     wire signed [47:0] product_ext;
     wire signed [47:0] add_ext;
+    wire signed [47:0] add_scaled;
 
     assign product_full = Batch_Norm_in * mult_wight;
     assign product_ext = {{(48-PRODUCT_WIDTH){product_full[PRODUCT_WIDTH-1]}}, product_full};
     assign add_ext = {{(48-DATA_WIDTH){add_wight[DATA_WIDTH-1]}}, add_wight};
+    assign add_scaled = add_ext <<< FRAC_BITS;
 
 `ifdef SIM
-    assign P_full = product_ext + add_ext;
+    assign P_full = product_ext + add_scaled;
 `else
     DSP48E2 #(
         .ACASCREG       (0),
@@ -51,7 +54,7 @@ module Batch_Norm #(
     ) dsp_inst (
         .A              ({{(30-DATA_WIDTH){Batch_Norm_in[DATA_WIDTH-1]}}, Batch_Norm_in}),
         .B              (mult_wight),
-        .C              ({{(48-DATA_WIDTH){add_wight[DATA_WIDTH-1]}}, add_wight}),
+        .C              (add_scaled),
         .D              (27'b0),
         .PCIN           (48'b0),
 
@@ -109,6 +112,6 @@ module Batch_Norm #(
     );
 `endif
 
-    assign Batch_Norm_out = P_full[36:19];
+    assign Batch_Norm_out = P_full[FRAC_BITS + DATA_WIDTH - 1:FRAC_BITS];
 
 endmodule

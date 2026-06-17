@@ -6,3 +6,6 @@ build/vivado/deep_snn_top/
 build/vivado/src/
 build/vivado/*.pb
 build/vivado/*.str
+sim_work/
+sim_integration_clean/
+bin_export/

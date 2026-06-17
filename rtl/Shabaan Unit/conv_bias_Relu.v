@@ -15,8 +15,8 @@ assign conv_out_bias = conv_in + conv_bias;
 always @(*)
  begin
  // if( ( conv_out_bias[DATA_WIDTH] == 1'b0 ) && ( conv_out_bias[DATA_WIDTH-1:0] != 18'd0 )  )
-   if( conv_out_bias > 19'd0 )
-   conv_out = conv_out_bias[DATA_WIDTH:1]; // LSB is truncated 
+   if ($signed(conv_out_bias) > 0)
+   conv_out = conv_out_bias[DATA_WIDTH-1:0];
   else
    conv_out = zero ;
  end

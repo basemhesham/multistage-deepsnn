@@ -9,7 +9,7 @@
 //   Layer 2: 4 x adder_layer2   (3 inputs each, last group uses orphans)
 //   Layer 3: 1 x adder_layer3   (3 inputs ? L2_1, L2_2, L2_3)
 //   Layer 4: 1 x adder_layer4   (2 inputs ? L2_4 + L3)
-//   Output:  final_output = top 18 bits of L4
+//   Output:  final_output = 18-bit Q8.9 sum
 // =============================================================================
 
 module adder_tree_10_4_1_1(
@@ -53,17 +53,17 @@ module adder_tree_10_4_1_1(
     adder_layer1 layer_1__9  (.add_1(in_25), .add_2(in_26), .add_3(in_27), .adder_out(L1_9)  );
     adder_layer1 layer_1__10 (.add_1(in_28), .add_2(in_29), .add_3(in_30), .adder_out(L1_10) );
 
-    // Layer 1 outputs exposed as conv25 taps (truncate: take [19:1])
-    assign conv25_1  = L1_1 [19:2];
-    assign conv25_2  = L1_2 [19:2];
-    assign conv25_3  = L1_3 [19:2];
-    assign conv25_4  = L1_4 [19:2];
-    assign conv25_5  = L1_5 [19:2];
-    assign conv25_6  = L1_6 [19:2];
-    assign conv25_7  = L1_7 [19:2];
-    assign conv25_8  = L1_8 [19:2];
-    assign conv25_9  = L1_9 [19:2];
-    assign conv25_10 = L1_10[19:2];
+    // Inputs are already converted back to Q8.9 by top_conv9_array.
+    assign conv25_1  = L1_1 [17:0];
+    assign conv25_2  = L1_2 [17:0];
+    assign conv25_3  = L1_3 [17:0];
+    assign conv25_4  = L1_4 [17:0];
+    assign conv25_5  = L1_5 [17:0];
+    assign conv25_6  = L1_6 [17:0];
+    assign conv25_7  = L1_7 [17:0];
+    assign conv25_8  = L1_8 [17:0];
+    assign conv25_9  = L1_9 [17:0];
+    assign conv25_10 = L1_10[17:0];
 
     // =========================================================================
     // Layer 2: 4 x 3-input adders  (20-bit in ? 22-bit out)
@@ -110,8 +110,9 @@ module adder_tree_10_4_1_1(
     );
 
     // =========================================================================
-    // Final output: take top 18 bits of 25-bit result
+    // The inputs are already Q8.9 values. Adding channels increases the
+    // integer width, not the number of fractional bits, so keep bits [17:0].
     // =========================================================================
-    assign final_output = L4[24:7];
+    assign final_output = L4[17:0];
 
 endmodule

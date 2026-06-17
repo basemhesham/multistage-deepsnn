@@ -1,7 +1,7 @@
 localparam int NUM_OF_BITS    = 18;
 localparam int NUM_OF_FILTERS = 64;
 
-localparam logic signed [NUM_OF_BITS-1:0] BN2_WEIGHTS [NUM_OF_FILTERS] = '{
+localparam logic signed [NUM_OF_BITS-1:0] BN2_BIAS [NUM_OF_FILTERS] = '{
     18'b111111111100010001,
     18'b111111111111011110,
     18'b111111111011111100,

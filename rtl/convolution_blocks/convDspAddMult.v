@@ -28,16 +28,11 @@ module xbip_dsp48_macro_cascade #(
     assign product_ext = {{(48-(2*PIXEL_W)){product_full[(2*PIXEL_W)-1]}}, product_full};
 
 `ifdef SIM
-    logic signed [47:0] P_sim;
-
-    // Behavioral simulation model for tools that do not know Xilinx DSP48E2.
-    // PREG=1 in the real primitive, so keep one clock of latency here.
-    always_ff @(posedge CLK) begin
-        P_sim <= product_ext + PCIN;
-    end
-
-    assign PCOUT = P_sim;
-    assign P_fab = P_sim;
+    // The top-level controller supplies one complete window per clock. Keep
+    // the simulation cascade combinational so all nine products belong to
+    // that same window.
+    assign PCOUT = product_ext + PCIN;
+    assign P_fab = product_ext + PCIN;
 `else
     (* keep = "true" *)
     DSP48E2 #(

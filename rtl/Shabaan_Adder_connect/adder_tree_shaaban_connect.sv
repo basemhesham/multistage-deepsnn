@@ -121,37 +121,36 @@ module adder_tree_shaaban_connect #(
                 .adder_out(ext_sum_raw[c])
             );
             
-            // Truncate to match Layer-1 tap normalization (Right shift 1)
-            assign ext_sum_correction[c] = ext_sum_raw[c][18:1];
+            assign ext_sum_correction[c] = ext_sum_raw[c][DATA_WIDTH-1:0];
         end
     endgenerate
 
     // =========================================================================
-    // 3. STAGE 1 DATA ASSEMBLY (Interleaving Taps and Corrections)
+    // 3. STAGE 1 DATA ASSEMBLY
     // -------------------------------------------------------------------------
-    // Trees 0-7: 10 taps + 1 correction each (stride of 11)
-    // Trees 8-11: 10 taps each (stride of 10)
-    // Total: (8 * 11) + (4 * 10) = 88 + 40 = 128 elements
+    // Each three-tree shift group produces 32 ordered CONV25 results:
+    //   tree 3g taps, correction 2g,
+    //   tree 3g+1 taps, correction 2g+1,
+    //   tree 3g+2 taps.
     // =========================================================================
     logic signed [DATA_WIDTH-1:0] flat_s1 [0:TOTAL_S1_INPUTS-1];
 
-    genvar k;
+    genvar group_index, k;
     generate
-        // Fill first 88 slots (Trees 0-7: 10 taps + 1 correction each)
-        for (t = 0; t < N_CORRECTION; t++) begin : gen_s1_corrected
+        for (group_index = 0; group_index < 4; group_index++) begin : gen_s1_group
             for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_s1_taps
-                assign flat_s1[ t * (TAPS_PER_TREE + 1) + k ] = tree_tap[t][k];
+                assign flat_s1[(group_index * 32) + k] =
+                    tree_tap[(group_index * 3)][k];
+                assign flat_s1[(group_index * 32) + 11 + k] =
+                    tree_tap[(group_index * 3) + 1][k];
+                assign flat_s1[(group_index * 32) + 22 + k] =
+                    tree_tap[(group_index * 3) + 2][k];
             end
-            // Append correction sum at the 11th slot of the block
-            assign flat_s1[ t * (TAPS_PER_TREE + 1) + TAPS_PER_TREE ] = ext_sum_correction[t];
-        end
 
-        // Fill remaining 40 slots (Trees 8-11: 10 taps each, no corrections)
-        for (t = N_CORRECTION; t < N_TREES; t++) begin : gen_s1_standard
-            for (k = 0; k < TAPS_PER_TREE; k++) begin : gen_s1_taps_std
-                assign flat_s1[ N_CORRECTION * (TAPS_PER_TREE + 1) + 
-                                (t - N_CORRECTION) * TAPS_PER_TREE + k ] = tree_tap[t][k];
-            end
+            assign flat_s1[(group_index * 32) + 10] =
+                ext_sum_correction[group_index * 2];
+            assign flat_s1[(group_index * 32) + 21] =
+                ext_sum_correction[(group_index * 2) + 1];
         end
     endgenerate
 
