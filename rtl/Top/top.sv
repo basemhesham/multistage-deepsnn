@@ -23,6 +23,8 @@ module deep_snn_top #(
     input  logic                          pixel_mem_wr_en,
     input  logic [5:0]                    pixel_mem_wr_addr,
     input  logic [(384*PIXEL_W)-1:0]      pixel_mem_wr_data,
+    input  logic                          start_i,
+    input  logic [71:0]                   mem_data_i,
 
 `ifdef SIM
     input  logic                          sim_pixels_override,
@@ -36,7 +38,10 @@ module deep_snn_top #(
     output logic                          classifier_done,
     output logic                          classifier_busy,
     output logic                          snn_done,
-    output logic                          done
+    output logic                          done,
+    output logic [15:0]                   mem_addr_o,
+    output logic                          mem_rd_o,
+    output logic                          map_done_o
 
 );
 
@@ -59,6 +64,15 @@ module deep_snn_top #(
     logic                          gap_sample_enable;
     logic                          gap_clear;
     logic                          gap_done;
+    logic                          ctrl_done_load_o;
+    logic                          ctrl_fetch_en_i;
+    logic                          ctrl_next_i;
+    logic                          map_conv_valid_o;
+    logic [449:0]                  map_conv_pixels_o;
+    logic                          map_conv_done_o;
+    logic                          map_ctrl_done_o;
+    logic                          map_frame_done_o;
+    logic [1:0]                    map_state_o;
     logic                          gap_busy;
     logic                          enable_d;
     logic                          snn_done_d;
@@ -90,6 +104,8 @@ module deep_snn_top #(
         .rst            (rst),
         .arst_n         (arst_n),
         .enable         (enable),
+        .done_load_o    (ctrl_done_load_o),
+        .conv_done_o    (map_conv_done_o),
         .mem_enable     (ctrl_mem_enable),
         .rd_enable      (ctrl_rd_enable),
         .stage          (src_sel),
@@ -103,8 +119,40 @@ module deep_snn_top #(
         .zero_sel       (ctrl_zero_sel),
         .padding_flag   (ctrl_padding_flag),
         .gap_valid      (gap_sample_enable),
+        .fetch_en_i     (ctrl_fetch_en_i),
+        .next_i         (ctrl_next_i),
         .done           (snn_done)
     );
+
+    mapping_controller #(
+        .PIXEL_W      (18),
+        .WORD_W       (72),
+        .IMG_ROWS     (24),
+        .IMG_COLS     (256),
+        .BUF_SIZE     (24),
+        .BANK_COLS    (8),
+        .CONV_K       (5),
+        .NUM_H_WIN    (30),
+        .NUM_SWEEPS   (30)
+    ) u_mapping_controller (
+        .clk          (clk),
+        .rst_n        (arst_n),
+        .start_i      (start_i),
+        .next_i       (ctrl_next_i),
+        .fetch_en_i   (ctrl_fetch_en_i),
+        .mem_addr_o   (mem_addr_o),
+        .mem_rd_o     (mem_rd_o),
+        .mem_data_i   (mem_data_i),
+        .conv_pixels_o(map_conv_pixels_o),
+        .conv_valid_o (map_conv_valid_o),
+        .conv_done_o  (map_conv_done_o),
+        .done_o       (map_ctrl_done_o),
+        .frame_done_o (map_frame_done_o),
+        .done_load_o  (ctrl_done_load_o),
+        .state_o      (map_state_o)
+    );
+
+    assign map_done_o = map_ctrl_done_o;
 
     pixel_mem #(
         .DATA_WIDTH  (PIXEL_W),
