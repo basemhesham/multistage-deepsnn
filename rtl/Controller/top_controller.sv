@@ -8,6 +8,8 @@ module top_controller #(
     input  logic rst,
     input  logic arst_n,
     input  logic enable,
+    input  logic done_load_o,
+    input  logic conv_done_o,
 
     output logic [0:3199] mem_enable,
     output logic          rd_enable,
@@ -22,6 +24,8 @@ module top_controller #(
     output logic          zero_sel,
     output logic          padding_flag,
     output logic          gap_valid,
+    output logic          fetch_en_i,
+    output logic          next_i,
     output logic          done
 );
 
@@ -50,6 +54,8 @@ module top_controller #(
     } state_t;
 
     state_t cs, ns;
+
+    logic fetch_en_sent;
 
     logic [STAGE1_CNT_W-1:0]   stage1_pos;
     logic [STAGE2_FRAME_W-1:0] stage2_frame_idx;
@@ -88,7 +94,8 @@ module top_controller #(
     endfunction
 
     wire stage1_last   = (stage1_pos == stage1_valid_positions(fragment_counter) - 1);
-    wire stage2_last   = (stage2_frame_idx == STAGE2_FRAMES - 1) &&
+    wire stage2_last   = (stage2_
+    frame_idx == STAGE2_FRAMES - 1) &&
                          (conv2_filter     == STAGE2_FILTERS - 1);
     wire stage3_last   = (conv3_filter     == STAGE3_FILTERS - 1);
     wire fragment_last = (fragment_counter == FRAGMENTS_MAX - 1);
@@ -187,8 +194,8 @@ module top_controller #(
 
         unique case (cs)
             IDLE:              ns = enable ? CLEAR_STAGE2_WORD : IDLE;
-            CLEAR_STAGE2_WORD: ns = STAGE1;
-            STAGE1:            ns = stage1_last ? CLEAR_STAGE3_WORD : STAGE1;
+            CLEAR_STAGE2_WORD: ns = done_load_o ? STAGE1 : CLEAR_STAGE2_WORD;
+            STAGE1:            ns = (stage1_last && conv_done_o) ? CLEAR_STAGE3_WORD : STAGE1;
             CLEAR_STAGE3_WORD: ns = STAGE2;
             STAGE2:            ns = stage2_last ? STAGE3 : STAGE2;
             STAGE3:            ns = stage3_last ? (run_complete ? DONE : CLEAR_STAGE2_WORD) : STAGE3;
@@ -272,6 +279,24 @@ module top_controller #(
         end
     end
 
+    always_ff @(posedge clk or negedge arst_n) begin
+        if (!arst_n) begin
+            fetch_en_i    <= 1'b0;
+            fetch_en_sent <= 1'b0;
+        end else if (rst) begin
+            fetch_en_i    <= 1'b0;
+            fetch_en_sent <= 1'b0;
+        end else begin
+            fetch_en_i <= 1'b0;
+            if (cs == CLEAR_STAGE2_WORD && done_load_o && !fetch_en_sent) begin
+                fetch_en_i    <= 1'b1;
+                fetch_en_sent <= 1'b1;
+            end
+            if (!done_load_o)
+                fetch_en_sent <= 1'b0;
+        end
+    end
+
     always_comb begin
         mem_enable      = '0;
         rd_enable       = 1'b0;
@@ -284,6 +309,7 @@ module top_controller #(
         zero_sel        = 1'b0;
         padding_flag    = 1'b0;
         gap_valid       = 1'b0;
+        next_i          = (cs == STAGE2 || cs == STAGE3);
         done            = (cs == DONE);
 
         unique case (cs)
